@@ -1,0 +1,9 @@
+*.o
+*.d
+*.S
+*.dump
+*.out
+!app/.output/
+app/driver/.output/
+app/user/.output/
+bin/upgrade/
