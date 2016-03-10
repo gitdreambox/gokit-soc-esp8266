@@ -3,7 +3,7 @@
 *.S
 *.dump
 *.out
-!app/.output/
+app/.output/
 app/driver/.output/
 app/user/.output/
 bin/upgrade/
