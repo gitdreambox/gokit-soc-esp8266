@@ -5,8 +5,7 @@
 #include "Hal_key.h"
 #include "Hal_infrared.h"
 #include "Hal_motor.h"
-
-//uint32 SysCountTime;
+//#include "Hal_rgb_led.h"
 
 soc_pcontext soc_context_Data = NULL; 
 
@@ -47,15 +46,17 @@ void ICACHE_FLASH_ATTR
 HW_Init(void)
 {
 //  Delay_Init(72);
-//  UARTx_Init();
-//  RGB_KEY_GPIO_Init();
-//  RGB_LED_Init();
+    RGB_GPIO_Init();
+    RGB_LED_Init();
 //  LED_GPIO_Init();
     KEY_GPIO_Init();
-//  TIM3_Int_Init(7199,9);   //ms interrupt
+    #ifdef MOTOR_ON
     motor_init(); 
+    #endif
 //  DHT11_Init();
+    #ifdef INFRARED_ON
     ir_init();
+    #endif
 }
 
 /** @addtogroup GizWits_SW_Init
@@ -156,16 +157,19 @@ SOC_SENSORTEST(soc_pcontext pgc)
     
     if(pgc->SysCountTime >= MaxSocTimout)  //KeyCountTime 1MS+1  °´¼üÏû¶¶10MS
     {
+        static uint16 Mocou = 0; 
+        
         pgc->SysCountTime = 0;
 
         /* Test LOG model */
 //      GAgent_Printf(GAGENT_CRITICAL, "ST : %d",system_get_time());
+        #ifdef INFRARED_ON
         GAgent_Printf(GAGENT_CRITICAL, "InfIO : %d", GPIO_INPUT_GET(GPIO_ID_PIN(Infrared_GPIO_PIN)));
+        #endif
 //      GAgent_Printf(GAGENT_CRITICAL, "key1 : %d", GPIO_INPUT_GET(GPIO_ID_PIN(GPIO_KEY1_PIN)));
 //      GAgent_Printf(GAGENT_CRITICAL, "key2 : %d", GPIO_INPUT_GET(GPIO_ID_PIN(GPIO_KEY2_PIN)));
 
-        static uint16 Mocou = 0;
-
+        #ifdef MOTOR_ON
         if(0 == Mocou)
         {
 //          user_motor_set_duty(0, 0);
@@ -190,7 +194,28 @@ SOC_SENSORTEST(soc_pcontext pgc)
             GAgent_Printf(GAGENT_CRITICAL, "MO : -");
             Mocou = 0;
         }
-
+        #endif
+        
+        #ifdef RGBLED_ON
+        if(0 == Mocou)
+        {
+            LED_RGB_Control(250,0,0);
+            GAgent_Printf(GAGENT_CRITICAL, "RGB : R");
+            Mocou++;
+        }
+        else if(1 == Mocou)
+        {
+            LED_RGB_Control(0,250,0);
+            GAgent_Printf(GAGENT_CRITICAL, "RGB : G");
+            Mocou++;
+        }
+        else if(2 == Mocou)
+        {
+            LED_RGB_Control(0,0,250);
+            GAgent_Printf(GAGENT_CRITICAL, "RGB : B");
+            Mocou = 0;
+        }
+        #endif
     }
     
 }
@@ -208,6 +233,8 @@ SOC_Tick(soc_pcontext pgc)
     SOC_SENSORTEST(pgc);
 
     key_handle(); 
+    #ifdef INFRARED_ON
     ir_update_status();
+    #endif
 }
 

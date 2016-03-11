@@ -4,6 +4,10 @@
 #include "utils.h"
 #include "gpio.h"
 
+//#define MOTOR_ON
+//#define RGBLED_ON
+//#define INFRARED_ON
+
 extern pgcontext pgContextData; 
 
 #define PROTOCOL_DEBUG
