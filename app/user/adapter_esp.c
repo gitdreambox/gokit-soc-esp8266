@@ -381,7 +381,7 @@ GAgent_DRVBootConfigWiFiMode( void )
         && RET_FAILED==pgContextData->rtinfo.webconfigflag )
     {
         GAgent_Printf( GAGENT_INFO,"%s ReStart.",__FUNCTION__);
-        GAgent_DevReset( );
+//        GAgent_DevReset( );
     }
     flag++;
     return wifi_get_opmode();
@@ -1456,4 +1456,53 @@ int32 ICACHE_FLASH_ATTR GAGENT_CheckOtaStatus( pgcontext pgc )
         }
     }
     return;
+}
+int8  ICACHE_FLASH_ATTR GAgent_DataHandle(pgcontext pgc,ppacket pTxbuf)
+{
+    int i;
+    ppacket Rxbuf = pgc->rtinfo.UartRxbuf;
+    Rxbuf->ppayload[0] = 0x01;
+    Rxbuf->ppayload[1] = 0x02;
+    Rxbuf->ppayload[2] = 0x03;
+    Rxbuf->ppayload[3] = 0x04;
+    Rxbuf->ppayload[4] = 0x05;
+    Rxbuf->phead = Rxbuf->ppayload-1;
+    Rxbuf->pend = Rxbuf->ppayload+5;
+
+    //模组接收到的P0数据部分
+    os_printf("\n================================P0\n");
+    for(i=0; i<pTxbuf->pend-pTxbuf->ppayload; i++)
+    {
+        os_printf("%02x ",pTxbuf->ppayload[i]);
+    }
+
+    os_printf("\n================================P0\n");
+
+    //将数据发送到云端和所有APP
+    //MCU状态上报:
+    Rxbuf->type = SetPacketType( Rxbuf->type,LOCAL_DATA_IN,1 );
+    Rxbuf->type = SetPacketType( Rxbuf->type,CLOUD_DATA_IN,0 );
+    Rxbuf->type = SetPacketType( Rxbuf->type,LAN_TCP_DATA_IN,0 );
+    ParsePacket( Rxbuf );
+    setChannelAttrs(pgc, NULL, NULL, 1);
+    dealPacket(pgc,Rxbuf);
+
+
+    //回复ACK给对应的通道
+    Rxbuf->type = SetPacketType( Rxbuf->type,LOCAL_DATA_IN,1 );
+    Rxbuf->type = SetPacketType( Rxbuf->type,CLOUD_DATA_IN,0 );
+    ParsePacket( Rxbuf );
+
+    if(pgc->ls.srcAttrs.fd >= 0)
+    {
+        Rxbuf->type = SetPacketType( Rxbuf->type,CLOUD_DATA_OUT,0 );
+        setChannelAttrs(pgc, NULL, &pgc->ls.srcAttrs, 0);
+        Lan_ClearClientAttrs(pgc, &pgc->ls.srcAttrs);
+    }
+    else if(os_strlen(pgc->rtinfo.waninfo.srcAttrs.phoneClientId) > 0)
+    {
+        Rxbuf->type = SetPacketType( Rxbuf->type,LAN_TCP_DATA_OUT,0 );
+        setChannelAttrs(pgc, &pgc->rtinfo.waninfo.srcAttrs, NULL, 0);
+        Cloud_ClearClientAttrs(pgc, &pgc->rtinfo.waninfo.srcAttrs);
+    }
 }

@@ -621,7 +621,7 @@ Local_GetInfo_Tick(pgcontext pgc)
     uint32 uiBaund[]={9600, 115200, 57600, 38400};
     static uint8 count = 1;
     static uint8 i = 1;
-    static uint8 firstSuccessflag = 0;
+    static uint8 firstSuccessflag = 1;
     uint8 j;
     int32 ret;
 
@@ -687,9 +687,44 @@ Local_GetInfo( pgcontext pgc )
     uint8 i=0;
     uint8 count = 10;
 
-    pgc->rtinfo.getInfoflag = RET_FAILED;
-    GAgent_LocalDataWriteP0withFlag(pgc, pgc->rtinfo.local.uart_fd, pgc->rtinfo.Txbuf,
-        MCU_INFO_CMD, 0, 500);
+    pgc->rtinfo.getInfoflag = RET_SUCCESS;
+
+    int8 *mcu_protocol_ver = "00000001";
+    int8 *mcu_p0_ver = "00000002";
+    int8 *mcu_hard_ver = "00000003";
+    int8 *mcu_soft_ver = "00000004";
+    int8 *mcu_product_key = "1177f1f81d714c2499407fa9f6328269";
+    uint16 mcu_passcodeEnableTime = 0;
+
+    strcpy((char *)pgc->mcu.hard_ver,mcu_hard_ver);
+    strcpy((char *)pgc->mcu.soft_ver,mcu_soft_ver);
+    strcpy((char *)pgc->mcu.p0_ver,mcu_p0_ver);
+    strcpy((char *)pgc->mcu.protocol_ver,mcu_protocol_ver);
+    strcpy((char *)pgc->mcu.product_key,mcu_product_key);
+    pgc->mcu.passcodeEnableTime = mcu_passcodeEnableTime;
+    pgc->mcu.passcodeTimeout = pgc->mcu.passcodeEnableTime;
+
+    if( 0 == pgc->mcu.passcodeEnableTime )
+    {
+        GAgent_SetWiFiStatus( pgc,WIFI_MODE_BINDING,1 );  //always enable Bind
+    }
+    else
+    {
+        GAgent_SetWiFiStatus( pgc,WIFI_MODE_BINDING,0 );
+    }
+    if( os_strcmp( (int8 *)pgc->mcu.product_key,pgc->gc.old_productkey )!=0 )
+    {
+        GAgent_UpdateInfo( pgc,pgc->mcu.product_key );
+        GAgent_Printf( GAGENT_INFO,"2 MCU old product_key:%s.",pgc->gc.old_productkey);
+    }
+
+    GAgent_Printf(GAGENT_INFO,"GAgent_get hard_ver: %s.",pgc->mcu.hard_ver);
+    GAgent_Printf(GAGENT_INFO,"GAgent_get soft_ver: %s.",pgc->mcu.soft_ver);
+    GAgent_Printf(GAGENT_INFO,"GAgent_get p0_ver: %s.",pgc->mcu.p0_ver);
+    GAgent_Printf(GAGENT_INFO,"GAgent_get protocal_ver: %s.",pgc->mcu.protocol_ver);
+    GAgent_Printf(GAGENT_INFO,"GAgent_get product_key: %s.",pgc->mcu.product_key);
+//    GAgent_LocalDataWriteP0withFlag(pgc, pgc->rtinfo.local.uart_fd, pgc->rtinfo.Txbuf,
+//        MCU_INFO_CMD, 0, 500);
 }
 /****************************************************************
 FunctionName    :   GAgent_Reset
@@ -986,7 +1021,7 @@ GAgent_LocalSendUpgrade(pgcontext pgc,int32 fd,ppacket pTxBuf,uint16 piecelen,ui
     piececount = 0;
     return RET_FAILED;
 }
-GAgent_LocalInformMcu(pgcontext pgc,uint32 firmwareLen)
+void  ICACHE_FLASH_ATTR GAgent_LocalInformMcu(pgcontext pgc,uint32 firmwareLen)
 {
     uint32 i;
     resetPacket(pgc->rtinfo.Txbuf);
@@ -1059,10 +1094,9 @@ GAgent_LocalSendGAgentstatus(pgcontext pgc,uint32 dTime_s )
 void ICACHE_FLASH_ATTR
 GAgent_LocalInit( pgcontext pgc )
 {
-//    GAgent_LocalDataIOInit( pgc );
     Local_HalInit( pgc );
     GAgent_RegisterReceiveDataHook( GAgent_Local_RecAll );
-//    GAgent_RegisterSendDataHook( serial_write );
+    //不再向MCU请求握手信息，直接赋值到pgc里
     Local_GetInfo( pgc );
     GAgent_Printf( GAGENT_INFO,"GAgent_LocalInit OK!");
 }

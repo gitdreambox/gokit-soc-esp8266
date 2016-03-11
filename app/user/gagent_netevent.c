@@ -519,7 +519,7 @@ GAgent_WiFiEventTick( pgcontext pgc,uint32 dTime_s )
         }
         gagentWiFiStatus = ( (pgc->rtinfo.GAgentStatus)&(LOCAL_GAGENTSTATUS_MASK) ) ;
     }
-    GAgent_LocalSendGAgentstatus(pgc,dTime_s);
+//    GAgent_LocalSendGAgentstatus(pgc,dTime_s);
     return ;
 }
 

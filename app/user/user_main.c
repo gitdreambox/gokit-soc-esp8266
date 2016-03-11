@@ -10,6 +10,8 @@
 *******************************************************************************/
 
 #include "gagent.h"
+#include "soc.h"
+
 #include "gagent_typedef.h"
 
 #include "ets_sys.h"
@@ -38,10 +40,12 @@ unsigned int default_private_key_len = 0;
 
 extern pgcontext pgContextData;
 
+extern soc_pcontext soc_context_Data; 
+
 #define TaskQueueLen    200
 LOCAL  os_event_t   TaskQueue[TaskQueueLen];
 
-void user_rf_pre_init(void)
+void  ICACHE_FLASH_ATTR user_rf_pre_init(void)
 {
 }
 
@@ -109,6 +113,7 @@ void user_init(void)
     wifi_set_sleep_type(NONE_SLEEP_T);//set none sleep mode
     espconn_tcp_set_max_con(10);
     LOCAL os_timer_t test_timer;
+    LOCAL os_timer_t test_timer_1; 
     uart_init_3(9600,74880);
     UART_SetPrintPort(1);
     os_printf("\r\n\n\n---------------SDK version:%s--------------\n", system_get_sdk_version());
@@ -139,9 +144,21 @@ void user_init(void)
     system_os_task(dataHandle_task, 1, TaskQueue, TaskQueueLen);
     GAgent_Init( &pgContextData );
     GAgent_dumpInfo( pgContextData );
+       
     //start timer
     os_timer_disarm(&test_timer);
     os_timer_setfn(&test_timer, (os_timer_func_t *)GAgent_Tick, pgContextData);
     os_timer_arm(&test_timer, 1000, 1);
+    
+    
+    /* USER LEVEL */
+    HW_Init();
+    
+    SW_Init(&soc_context_Data); 
+
+    //start soc timer
+    os_timer_disarm(&test_timer_1);
+    os_timer_setfn(&test_timer_1, (os_timer_func_t *)SOC_Tick, soc_context_Data); 
+    os_timer_arm(&test_timer_1, SOC_TIME_OUT, 1); 
 }
 

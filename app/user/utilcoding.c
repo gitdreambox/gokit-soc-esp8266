@@ -270,9 +270,9 @@ ParsePacket( ppacket pRxBuf )
     else if( ((pRxBuf->type)&(LOCAL_DATA_IN)) == LOCAL_DATA_IN )
     {
         /* head(0xffff)| len(2B) | cmd(1B) | sn(1B) | flag(2B) |  payload(xB) | checksum(1B) */
-        pRxBuf->ppayload = pRxBuf->phead+8;   /* head + len + cmd + sn + flag */
-        datalen = ( (int32)HTONS( *(uint16 *)(pRxBuf->phead + 2) ) ) & 0xffff;
-        pRxBuf->pend =  (pRxBuf->phead )+( datalen+4-1 ); /* datalen + head + len -checksum */
+//        pRxBuf->ppayload = pRxBuf->phead+8;   /* head + len + cmd + sn + flag */
+//        datalen = ( (int32)HTONS( *(uint16 *)(pRxBuf->phead + 2) ) ) & 0xffff;
+//        pRxBuf->pend =  (pRxBuf->phead )+( datalen+4-1 ); /* datalen + head + len -checksum */
 
         GAgent_Printf( GAGENT_DEBUG," ReSet Data Type : %04X - LOCAL_DATA_IN", pRxBuf->type );
         pRxBuf->type = SetPacketType( pRxBuf->type,LOCAL_DATA_IN,0 );
@@ -320,8 +320,9 @@ dealPacket( pgcontext pgc, ppacket pTxBuf )
     {
         GAgent_Printf( GAGENT_DEBUG,"packet Type : LOCAL_DATA_OUT ");
         pTxBuf->type = SetPacketType(pTxBuf->type, LOCAL_DATA_OUT, 0);
-        copyPacket(pTxBuf, pgc->rtinfo.Txbuf);
-        GAgent_LocalDataWriteP0( pgc,pgc->rtinfo.local.uart_fd, pgc->rtinfo.Txbuf,MCU_CTRL_CMD );
+        GAgent_DataHandle(pgc,pTxBuf);
+//        copyPacket(pTxBuf, pgc->rtinfo.Txbuf);
+//        GAgent_LocalDataWriteP0( pgc,pgc->rtinfo.local.uart_fd, pgc->rtinfo.Txbuf,MCU_CTRL_CMD );
         GAgent_Printf( GAGENT_DEBUG,"ReSetpacket Type : LOCAL_DATA_OUT ");
     }
     if( ((pTxBuf->type)&(CLOUD_DATA_OUT)) == CLOUD_DATA_OUT )

@@ -227,7 +227,7 @@ Lan_Upload_AllApp(pgcontext pgc, ppacket pTxBuf)
     }
 }
 
-void Lan_sendTcpData(pgcontext pgc, int32 fd, uint16 cmd, int32 sn, ppacket pTxBuf)
+void ICACHE_FLASH_ATTR Lan_sendTcpData(pgcontext pgc, int32 fd, uint16 cmd, int32 sn, ppacket pTxBuf)
 {
     varc sendvarc;
     uint32 dataLen;
@@ -371,7 +371,7 @@ CreateUDPBroadCastServer(pgcontext pgc)
         Description         :   destroy udp broadcast server.
         Add by Frank Liu     --2015-04-22
 ****************************************************************/
-void DestroyUDPBroadCastServer(pgcontext pgc)
+void ICACHE_FLASH_ATTR DestroyUDPBroadCastServer(pgcontext pgc)
 {
     if(NULL == pgc)
     {

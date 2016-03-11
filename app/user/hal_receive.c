@@ -43,12 +43,12 @@ static uint32 guiLocalPacketStart;
 /* 非包头部分，数据0xff应该变换为0xff 55,不影响校验和和len。因此，非包头部分，收到0xff后，该标志位被置1 */
 static uint8 halRecKeyWord = 0;
 
-static uint8 __halbuf_read(uint32 offset)
+static uint8  ICACHE_FLASH_ATTR __halbuf_read(uint32 offset)
 {
     return hal_RxBuffer[offset & HAL_BUF_MASK];
 }
 
-static void __halbuf_write(uint32 offset, uint8 value)
+static void  ICACHE_FLASH_ATTR __halbuf_write(uint32 offset, uint8 value)
 {
     hal_RxBuffer[offset & HAL_BUF_MASK] = value;
 }

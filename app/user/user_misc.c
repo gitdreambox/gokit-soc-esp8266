@@ -409,7 +409,7 @@ static LONG ICACHE_FLASH_ATTR _C_formatter(const CHAR *format,
 }   /* _C_formatter(,,,) */
 #endif
 
-void GAgent_Printf(unsigned int level, char *fmt, ...)
+void  ICACHE_FLASH_ATTR GAgent_Printf(unsigned int level, char *fmt, ...)
 {
     char str[256];
     char *buffer;
@@ -472,7 +472,7 @@ void GAgent_Printf(unsigned int level, char *fmt, ...)
     return;
 }
 
-void GAgent_DebugPacket(unsigned char *pData, int len)
+void  ICACHE_FLASH_ATTR GAgent_DebugPacket(unsigned char *pData, int len)
 {
     int i;
     GAgent_Printf(GAGENT_DUMP, "\r\nDump Packet, len:%d", len);

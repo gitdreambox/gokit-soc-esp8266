@@ -32,7 +32,7 @@ else
     ifeq ($(BOOT), old)
         boot = old
     else
-        boot = none
+        boot = new
     endif
 endif
 
@@ -42,7 +42,7 @@ else
     ifeq ($(APP), 2)
         app = 2
     else
-        app = 0
+        app = 1
     endif
 endif
 
@@ -116,8 +116,8 @@ else
               addr = 0x101000
             endif
           else
-            size_map = 0
-            flash = 512
+            size_map = 6
+            flash = 4096
             ifeq ($(app), 2)
               addr = 0x41000
             endif

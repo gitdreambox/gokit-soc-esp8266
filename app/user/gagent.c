@@ -4,7 +4,6 @@
 #include "iof_arch.h"
 pgcontext pgContextData=NULL;
 
-
 void GAgent_NewVar( pgcontext *pgc );
 
 /****************************************************************
@@ -20,7 +19,7 @@ GAgent_Init( pgcontext *pgc )
     GAgent_NewVar( pgc );
     GAgent_DevInit( *pgc );
     /* -1: no log */
-    GAgent_loglevelSet( /*-1*/  /*GAGENT_DUMP*/ /*GAGENT_INFO */  /*GAGENT_WARNING*/ GAGENT_DEBUG);
+    GAgent_loglevelSet(/*-1*//*GAGENT_DUMP*//*GAGENT_INFO *//*GAGENT_WARNING*/GAGENT_ERROR); 
 
     GAgent_VarInit( pgc );
     GAgent_LocalInit( *pgc );
@@ -661,9 +660,10 @@ GAgent_Tick( pgcontext pgc )
     }
     GAgent_DevTick();
     GAgent_CloudTick( pgc,1 );
-    GAgent_LocalTick( pgc,1 );
+//    GAgent_LocalTick( pgc,1 );
     GAgent_LanTick( pgc,1 );
     GAgent_WiFiEventTick( pgc,1 );
     GAgent_RefreshIPTick( pgc,1 );
-    GAgent_BigDataTick( pgc );
+//    GAgent_BigDataTick( pgc );
 }
+

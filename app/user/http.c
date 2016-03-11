@@ -82,7 +82,7 @@ Http_GET( const int8 *host,const int8 *did,int32 socketid )
 *   Add by Alex lin  --2014-12-16
 *
 ********************************************************/
-int32 Http_Delete( int32 socketid, const int8 *host,const int8 *did,const int8 *passcode )
+int32 ICACHE_FLASH_ATTR Http_Delete( int32 socketid, const int8 *host,const int8 *did,const int8 *passcode )
 {
     int32 ret=0;
     int8 *sendBuf=NULL;
