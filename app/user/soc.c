@@ -46,10 +46,13 @@ void ICACHE_FLASH_ATTR
 HW_Init(void)
 {
 //  Delay_Init(72);
+    #ifdef RGBLED_ON
     RGB_GPIO_Init();
     RGB_LED_Init();
-//  LED_GPIO_Init();
+    #endif
+    #ifdef KEY_ON
     KEY_GPIO_Init();
+    #endif
     #ifdef MOTOR_ON
     motor_init(); 
     #endif
@@ -166,30 +169,27 @@ SOC_SENSORTEST(soc_pcontext pgc)
         #ifdef INFRARED_ON
         GAgent_Printf(GAGENT_CRITICAL, "InfIO : %d", GPIO_INPUT_GET(GPIO_ID_PIN(Infrared_GPIO_PIN)));
         #endif
-//      GAgent_Printf(GAGENT_CRITICAL, "key1 : %d", GPIO_INPUT_GET(GPIO_ID_PIN(GPIO_KEY1_PIN)));
-//      GAgent_Printf(GAGENT_CRITICAL, "key2 : %d", GPIO_INPUT_GET(GPIO_ID_PIN(GPIO_KEY2_PIN)));
-
+        
+        #ifdef KEY_ON
+        GAgent_Printf(GAGENT_CRITICAL, "key1 : %d", GPIO_INPUT_GET(GPIO_ID_PIN(GPIO_KEY1_PIN)));
+        GAgent_Printf(GAGENT_CRITICAL, "key2 : %d", GPIO_INPUT_GET(GPIO_ID_PIN(GPIO_KEY2_PIN)));
+        #endif
+        
         #ifdef MOTOR_ON
         if(0 == Mocou)
         {
-//          user_motor_set_duty(0, 0);
-//          user_motor_set_duty(0, 1);
             motor_control(5);
             GAgent_Printf(GAGENT_CRITICAL, "MO : 0");
             Mocou++;
         }
         else if(1 == Mocou)
         {
-//          user_motor_set_duty(9000, 0);
-//          user_motor_set_duty(0, 1);
             motor_control(0);
             GAgent_Printf(GAGENT_CRITICAL, "MO : +");
             Mocou++;
         }
         else if(2 == Mocou)
         {
-//          user_motor_set_duty(9000, 0);
-//          user_motor_set_duty(9000, 1);
             motor_control(9);
             GAgent_Printf(GAGENT_CRITICAL, "MO : -");
             Mocou = 0;
@@ -232,7 +232,10 @@ SOC_Tick(soc_pcontext pgc)
 {
     SOC_SENSORTEST(pgc);
 
-    key_handle(); 
+    #ifdef KEY_ON
+    key_handle();
+    #endif
+     
     #ifdef INFRARED_ON
     ir_update_status();
     #endif

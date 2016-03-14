@@ -5,10 +5,9 @@
 #include "gpio.h"
 
 //#define MOTOR_ON
-//#define RGBLED_ON
+#define RGBLED_ON
 //#define INFRARED_ON
-
-extern pgcontext pgContextData; 
+//#define KEY_ON
 
 #define PROTOCOL_DEBUG
 
@@ -23,6 +22,8 @@ typedef struct soc_context_t
     uint32 SysCountTime; 
     
 }soc_context, * soc_pcontext;
+
+extern soc_pcontext soc_context_Data; 
 
 void HW_Init(void); 
 void SW_Init(soc_pcontext * pgc); 

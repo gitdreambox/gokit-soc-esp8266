@@ -14,25 +14,10 @@
 *********************************************************/
 #include "Hal_rgb_led.h"
 
-void RGB_GPIO_Init(void)
-{
-    // SCL/SDA
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4);
-
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);
-    
-//  // power con
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_GPIO15); 
-    //contron power
-    GPIO_OUTPUT_SET(GPIO_ID_PIN(15), 1); 
-    
-}
-
 void LED_delay(unsigned int  ms)
 {
     volatile unsigned  int i=0;
     for(i=0; i<ms; i++);
-
 }
 
 
@@ -105,11 +90,28 @@ void DataDealWithAndSend(uint8_t r, uint8_t g, uint8_t b)
     DatSend(dx);
 }
 
+void RGB_GPIO_Init(void)
+{
+//  // power con
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_GPIO15);
+//  //contron power
+//  GPIO_OUTPUT_SET(GPIO_ID_PIN(15), 1);
+
+    // SCL/SDA
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4);
+
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);
+
+}
+
 void RGB_LED_Init(void)
 {
+    //contron power
+    GPIO_OUTPUT_SET(GPIO_ID_PIN(15), 1); 
+    
     Send32Zero();
-    DataDealWithAndSend(0,0,0);	  // display red
-    DataDealWithAndSend(0,0,0);
+    DataDealWithAndSend(0, 0, 0);   // display red
+    DataDealWithAndSend(0, 0, 0); 
 
 }
 
