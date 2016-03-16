@@ -149,16 +149,15 @@ void user_init(void)
     os_timer_disarm(&test_timer);
     os_timer_setfn(&test_timer, (os_timer_func_t *)GAgent_Tick, pgContextData);
     os_timer_arm(&test_timer, 1000, 1);
-    
-    
+	
     /* USER LEVEL */
-    HW_Init();
+    soc_hw_init();
     
-    SW_Init(&soc_context_Data); 
+    soc_sw_init(&soc_context_Data); 
 
     //start soc timer
     os_timer_disarm(&test_timer_1);
-    os_timer_setfn(&test_timer_1, (os_timer_func_t *)SOC_Tick, soc_context_Data); 
+    os_timer_setfn(&test_timer_1, (os_timer_func_t *)soc_tick, soc_context_Data); 
     os_timer_arm(&test_timer_1, SOC_TIME_OUT, 1); 
 }
 

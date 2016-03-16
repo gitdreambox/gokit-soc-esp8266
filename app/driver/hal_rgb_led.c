@@ -12,27 +12,29 @@
 *            www.gizwits.com
 *
 *********************************************************/
-#include "Hal_rgb_led.h"
+#include "driver/Hal_rgb_led.h"
 
-void LED_delay(unsigned int  ms)
+static void rgb_delay(unsigned int  us)
 {
+    /* Define your delay function */
+    
     volatile unsigned  int i=0;
-    for(i=0; i<ms; i++);
+    for(i=0; i<us; i++);
 }
 
 
 /************ generation clock *********************/
-void ClkProduce(void)
+static void ClkProduce(void)
 {
     SCL_LOW;    // SCL=0
-    LED_delay(40);
+    rgb_delay(40); 
     SCL_HIGH;     // SCL=1
-    LED_delay(40);
+    rgb_delay(40); 
 }
 
 
 /**********  send 32 zero ********************/
-void Send32Zero(void)
+static void send_32zero(void)
 {
     unsigned char i;
     SDA_LOW;   // SDA=0
@@ -42,7 +44,7 @@ void Send32Zero(void)
 
 
 /********* invert the grey value of the first two bits ***************/
-uint8_t TakeAntiCode(uint8_t dat)
+static uint8_t take_anti_code(uint8_t dat)
 {
     uint8_t tmp = 0;
 
@@ -52,7 +54,7 @@ uint8_t TakeAntiCode(uint8_t dat)
 
 
 /****** send gray data *********/
-void DatSend(uint32 dx)
+static void data_send(uint32 dx)
 {
     uint8_t i;
 
@@ -73,57 +75,61 @@ void DatSend(uint32 dx)
     }
 }
 
+
 /******* data processing  ********************/
-void DataDealWithAndSend(uint8_t r, uint8_t g, uint8_t b)
+static void data_dealwith_send(uint8_t r, uint8_t g, uint8_t b)
 {
     uint32 dx = 0; 
 
     dx |= (uint32)0x03 << 30;             // The front of the two bits 1 is flag bits
-    dx |= (uint32)TakeAntiCode(b) << 28; 
-    dx |= (uint32)TakeAntiCode(g) << 26; 
-    dx |= (uint32)TakeAntiCode(r) << 24; 
+    dx |= (uint32)take_anti_code(b) << 28; 
+    dx |= (uint32)take_anti_code(g) << 26; 
+    dx |= (uint32)take_anti_code(r) << 24; 
 
     dx |= (uint32)b << 16; 
     dx |= (uint32)g << 8; 
     dx |= r;
 
-    DatSend(dx);
+    data_send(dx);
 }
 
-void RGB_GPIO_Init(void)
+
+void rgb_control(uint8_t R, uint8_t G, uint8_t B)
 {
-//  // power con
+    //contron power
+    POW_HIGH; 
+    
+    send_32zero();
+    data_dealwith_send(R, G, B);	  // display red
+    data_dealwith_send(R, G, B);	  // display red
+}
+
+
+void rgb_led_init(void)
+{
+    //contron power
+    POW_HIGH; 
+
+    send_32zero();
+    data_dealwith_send(0, 0, 0);   // display red
+    data_dealwith_send(0, 0, 0);
+}
+
+
+void rgb_gpio_init(void)
+{
+    /* Migrate your driver code */
+    
+    // power con
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_GPIO15);
-//  //contron power
-//  GPIO_OUTPUT_SET(GPIO_ID_PIN(15), 1);
 
     // SCL/SDA
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4);
 
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);
 
-}
-
-void RGB_LED_Init(void)
-{
-    //contron power
-    GPIO_OUTPUT_SET(GPIO_ID_PIN(15), 1); 
-    
-    Send32Zero();
-    DataDealWithAndSend(0, 0, 0);   // display red
-    DataDealWithAndSend(0, 0, 0); 
+    gpio_output_set(0, 0, GPIO_ID_PIN(GPIO_RGB_SCL) | GPIO_ID_PIN(GPIO_RGB_SDA) | GPIO_ID_PIN(GPIO_RGB_POW), 0);
 
 }
-
-void LED_RGB_Control(uint8_t R, uint8_t G, uint8_t B)
-{
-    //contron power
-    GPIO_OUTPUT_SET(GPIO_ID_PIN(15), 1); 
-    
-    Send32Zero();
-    DataDealWithAndSend(R, G, B);	  // display red
-    DataDealWithAndSend(R, G, B);	  // display red
-}
-
 
 

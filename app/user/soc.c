@@ -2,18 +2,13 @@
 #include "lan.h"
 #include "cloud.h"
 #include "iof_arch.h"
-#include "Hal_key.h"
-#include "Hal_infrared.h"
-#include "Hal_motor.h"
-//#include "Hal_rgb_led.h"
+#include "driver/Hal_key.h"
+#include "driver/Hal_infrared.h"
+#include "driver/Hal_motor.h"
+#include "driver/Hal_rgb_led.h"
+#include "driver/Hal_temp_hum.h"
 
 soc_pcontext soc_context_Data = NULL; 
-
-//uint8_t gaterSensorFlag;
-//uint8_t Set_LedStatus = 0;
-//uint8_t NetConfigureFlag = 0;
-//uint32 Last_KeyTime = 0;
-//uint8_t lastTem = 0, lastHum = 0;
 
 /* SOC */
 
@@ -39,34 +34,37 @@ uint32 ICACHE_FLASH_ATTR
     return (system_get_time() / 1000 / 1000);
 }
 
-/** @addtogroup GizWits_HW_Init
+/** @addtogroup soc_hw_init
   * @{
   */
 void ICACHE_FLASH_ATTR
-HW_Init(void)
+soc_hw_init(void)
 {
-//  Delay_Init(72);
     #ifdef RGBLED_ON
-    RGB_GPIO_Init();
-    RGB_LED_Init();
+    rgb_gpio_init();
+    rgb_led_init();
     #endif
     #ifdef KEY_ON
-    KEY_GPIO_Init();
+    key_gpio_init(); 
     #endif
     #ifdef MOTOR_ON
     motor_init(); 
     #endif
-//  DHT11_Init();
+    #ifdef TEMPHUM_ON
+    uint8 ret; 
+    ret = dh11_init();
+    GAgent_Printf(GAGENT_INFO, "dh11_init : %d ", ret); 
+    #endif
     #ifdef INFRARED_ON
     ir_init();
     #endif
 }
 
-/** @addtogroup GizWits_SW_Init
+/** @addtogroup soc_sw_init
   * @{
   */
 void ICACHE_FLASH_ATTR
-SW_Init(soc_pcontext *pgc)
+soc_sw_init(soc_pcontext * pgc)
 {
     *pgc = (soc_pcontext)os_malloc(sizeof(soc_context)); 
     while(NULL == *pgc)
@@ -77,8 +75,6 @@ SW_Init(soc_pcontext *pgc)
     os_memset(*pgc, 0, sizeof(soc_context)); 
 
     return; 
-    
-//  memset((uint8_t *)pgc, 0, sizeof(soc_context_t));
     
 //  ReadTypeDef.Alert = 0;
 //  ReadTypeDef.LED_Cmd = 0;
@@ -97,7 +93,7 @@ SW_Init(soc_pcontext *pgc)
 
 
 /*******************************************************************************
-* Function Name  : KEY_Handle
+* Function Name  : key_handle
 * Description    : Key processing function
 * Input          : None
 * Output         : None
@@ -109,7 +105,7 @@ key_handle(void)
 {
     uint8_t Key_return = 0;
 
-    Key_return = ReadKeyValue(); 
+    Key_return = key_state_read(); 
     
     if(Key_return & KEY_UP)
     {
@@ -125,7 +121,7 @@ key_handle(void)
             GAgent_Printf(GAGENT_CRITICAL, "KEY2 PRESS ,Soft AP mode\r\n");
             #endif
             //Soft AP mode, RGB red
-//  		LED_RGB_Control(255, 0, 0);
+//  		rgb_control(255, 0, 0);
 //  		GizWits_D2WConfigCmd(SoftAp_Mode);
 //          NetConfigureFlag = 1;
         }
@@ -146,7 +142,7 @@ key_handle(void)
             #ifdef PROTOCOL_DEBUG
             GAgent_Printf(GAGENT_CRITICAL, "KEY2 PRESS LONG ,AirLink mode\r\n");
             #endif
-//  		LED_RGB_Control(0, 128, 0);
+//  		rgb_control(0, 128, 0);
 //  		GizWits_D2WConfigCmd(AirLink_Mode);
 //          NetConfigureFlag = 1;
         }
@@ -154,11 +150,11 @@ key_handle(void)
 }
 
 void ICACHE_FLASH_ATTR
-SOC_SENSORTEST(soc_pcontext pgc)
+soc_sensortest(soc_pcontext pgc)
 {
     pgc->SysCountTime ++;
     
-    if(pgc->SysCountTime >= MaxSocTimout)  //KeyCountTime 1MS+1  °´¼üÏû¶¶10MS
+    if(pgc->SysCountTime >= MaxSocTimout) 
     {
         static uint16 Mocou = 0; 
         
@@ -166,8 +162,15 @@ SOC_SENSORTEST(soc_pcontext pgc)
 
         /* Test LOG model */
 //      GAgent_Printf(GAGENT_CRITICAL, "ST : %d",system_get_time());
+        
+        #ifdef TEMPHUM_ON
+        uint8_t curTem = 0, curHum = 0;
+        hdt11_read_data(&curTem, &curHum); 
+        GAgent_Printf(GAGENT_CRITICAL, "Temperature : %d , Humidity : %d", curTem, curHum); 
+        #endif
+        
         #ifdef INFRARED_ON
-        GAgent_Printf(GAGENT_CRITICAL, "InfIO : %d", GPIO_INPUT_GET(GPIO_ID_PIN(Infrared_GPIO_PIN)));
+        GAgent_Printf(GAGENT_CRITICAL, "InfIO : %d", ir_update_status()); 
         #endif
         
         #ifdef KEY_ON
@@ -180,42 +183,49 @@ SOC_SENSORTEST(soc_pcontext pgc)
         {
             motor_control(5);
             GAgent_Printf(GAGENT_CRITICAL, "MO : 0");
-            Mocou++;
         }
         else if(1 == Mocou)
         {
             motor_control(0);
             GAgent_Printf(GAGENT_CRITICAL, "MO : +");
-            Mocou++;
         }
         else if(2 == Mocou)
         {
             motor_control(9);
             GAgent_Printf(GAGENT_CRITICAL, "MO : -");
-            Mocou = 0;
         }
         #endif
         
         #ifdef RGBLED_ON
         if(0 == Mocou)
         {
-            LED_RGB_Control(250,0,0);
-            GAgent_Printf(GAGENT_CRITICAL, "RGB : R");
+            rgb_control(0, 0, 250);
+            GAgent_Printf(GAGENT_CRITICAL, "RGB : B"); 
+        }
+        else if(1 == Mocou)
+        {
+            rgb_control(0, 250, 0); 
+            GAgent_Printf(GAGENT_CRITICAL, "RGB : G");
+        }
+        else if(2 == Mocou)
+        {
+            rgb_control(250, 0, 0);
+            GAgent_Printf(GAGENT_CRITICAL, "RGB : R"); 
+        }
+        #endif
+        
+        if(0 == Mocou)
+        {
             Mocou++;
         }
         else if(1 == Mocou)
         {
-            LED_RGB_Control(0,250,0);
-            GAgent_Printf(GAGENT_CRITICAL, "RGB : G");
             Mocou++;
         }
         else if(2 == Mocou)
         {
-            LED_RGB_Control(0,0,250);
-            GAgent_Printf(GAGENT_CRITICAL, "RGB : B");
             Mocou = 0;
         }
-        #endif
     }
     
 }
@@ -228,16 +238,13 @@ SOC_SENSORTEST(soc_pcontext pgc)
 * @return void ICACHE_FLASH_ATTR
 */
 void ICACHE_FLASH_ATTR
-SOC_Tick(soc_pcontext pgc)
+soc_tick(soc_pcontext pgc)
 {
-    SOC_SENSORTEST(pgc);
+//  soc_sensortest(pgc);
 
     #ifdef KEY_ON
     key_handle();
     #endif
      
-    #ifdef INFRARED_ON
-    ir_update_status();
-    #endif
 }
 

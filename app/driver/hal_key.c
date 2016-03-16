@@ -12,32 +12,12 @@
 *            www.gizwits.com
 *
 *********************************************************/
-#include "hal_key.h"
+#include "driver/hal_key.h"
 
 uint32 KeyCountTime; 
 
 /*******************************************************************************
-* Function Name  : KEY_GPIO_Init
-* Description    : Configure GPIO Pin
-* Input          : None
-* Output         : None
-* Return         : None
-* Attention		 : None
-*******************************************************************************/
-void ICACHE_FLASH_ATTR
-KEY_GPIO_Init(void)
-{
-    //key1
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO13); 
-    gpio_output_set(0, 0, 0, GPIO_ID_PIN(GPIO_KEY1_PIN)); 
-    
-    //key2
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12); 
-    gpio_output_set(0, 0, 0, GPIO_ID_PIN(GPIO_KEY2_PIN)); 
-}
-
-/*******************************************************************************
-* Function Name  : Get_Key
+* Function Name  : key_value_read
 * Description    : Read the KEY state
 * Input          : None
 * Output         : None
@@ -45,29 +25,25 @@ KEY_GPIO_Init(void)
 * Attention		 : None
 *******************************************************************************/
 uint8_t ICACHE_FLASH_ATTR
-Get_Key(void)
+key_value_read(void)
 {
     uint8_t ReadKey;
 
-    if(!GPIO_INPUT_GET(GPIO_ID_PIN(GPIO_KEY1_PIN))) 
+    if(!GET_KEY1) 
     {
         ReadKey |= PRESS_KEY1;
     }
-    if(!GPIO_INPUT_GET(GPIO_ID_PIN(GPIO_KEY2_PIN))) 
+    if(!GET_KEY2) 
     {
         ReadKey |= PRESS_KEY2;
     }
-//  if(!GPIO_INPUT_GET(GPIO_KEY3_PIN))
-//  {
-//      ReadKey |= PRESS_KEY3;
-//  }
 
     return ReadKey;
 }
 
 
 /*******************************************************************************
-* Function Name  : ReadKeyValue
+* Function Name  : key_state_read
 * Description    : Read the KEY value
 * Input          : None
 * Output         : None
@@ -75,7 +51,7 @@ Get_Key(void)
 * Attention		 : None
 *******************************************************************************/
 uint8_t ICACHE_FLASH_ATTR
-ReadKeyValue(void)
+key_state_read(void)
 {
     static uint8_t Key_Check;
     static uint8_t Key_State;
@@ -100,7 +76,7 @@ ReadKeyValue(void)
         Key_Check = 0;
         
         //获取当前按键触发值
-        Key_press = Get_Key();
+        Key_press = key_value_read(); 
         
         switch (Key_State)
         {
@@ -164,4 +140,25 @@ ReadKeyValue(void)
     return  NO_KEY;
 }
 
+/*******************************************************************************
+* Function Name  : key_gpio_init
+* Description    : Configure GPIO Pin
+* Input          : None
+* Output         : None
+* Return         : None
+* Attention		 : None
+*******************************************************************************/
+void ICACHE_FLASH_ATTR
+key_gpio_init(void)
+{
+    /* Migrate your driver code */
+
+    //key1
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO13);
+    gpio_output_set(0, 0, 0, GPIO_ID_PIN(GPIO_KEY1_PIN));
+
+    //key2
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12);
+    gpio_output_set(0, 0, 0, GPIO_ID_PIN(GPIO_KEY2_PIN));
+}
 

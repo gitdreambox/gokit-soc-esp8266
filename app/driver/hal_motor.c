@@ -12,7 +12,7 @@
 *            www.gizwits.com
 *
 *********************************************************/
-#include "Hal_motor.h"
+#include "driver/Hal_motor.h"
 #include "pwm.h"
 
 struct pwm_param Motor_param;
@@ -25,7 +25,8 @@ struct pwm_param Motor_param;
  * Returns      : NONE
 *******************************************************************************/
 void ICACHE_FLASH_ATTR
-user_motor_set_duty(uint32 duty, uint8 channel) {
+user_motor_set_duty(uint32 duty, uint8 channel) 
+{
     if(duty != Motor_param.duty[channel])
     {
 
@@ -73,6 +74,8 @@ motor_control(MOTOR_T status)
 void ICACHE_FLASH_ATTR
 motor_init(void)
 {
+    /* Migrate your driver code */
+    
     if(Motor_param.period > 10000 || Motor_param.period < 1000)
     {
         Motor_param.period = 1000;
