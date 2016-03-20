@@ -293,7 +293,7 @@ GAgent_WiFiEventTick( pgcontext pgc,uint32 dTime_s )
             }
             else
             {
-              /* ÔÚ¹æ¶¨Ê±¼äÄÚ½ÓÊÕµ½ÅäÖÃ°ü */
+              /* ?Ú¹æ¶¨Ê±???Ú½??Õµ????Ã°? */
               GAgent_Printf( GAGENT_INFO,"Receive OnBoarding data.");
               pgc->ls.onboardingBroadCastTime = SEND_UDP_DATA_TIMES;
               pgc->gc.flag |=XPG_CFG_FLAG_CONFIG;
@@ -323,7 +323,7 @@ GAgent_WiFiEventTick( pgcontext pgc,uint32 dTime_s )
         if( newStatus&WIFI_STATION_CONNECTED )
         {
             GAgent_Printf( GAGENT_INFO," WIFI_STATION_CONNECTED UP" );
-            /* ÖØÖÃÖØÐÂÁ¬½ÓÔÆ¶ËÊ±¼ä */
+            /* ?????????????Æ¶?Ê±?? */
             pgc->rtinfo.waninfo.ReConnectMqttTime = GAGENT_MQTT_TIMEOUT;
             pgc->rtinfo.waninfo.ReConnectHttpTime = GAGENT_HTTP_TIMEOUT;
             if( !(newStatus&WIFI_MODE_ONBOARDING) )
@@ -519,7 +519,7 @@ GAgent_WiFiEventTick( pgcontext pgc,uint32 dTime_s )
         }
         gagentWiFiStatus = ( (pgc->rtinfo.GAgentStatus)&(LOCAL_GAGENTSTATUS_MASK) ) ;
     }
-//    GAgent_LocalSendGAgentstatus(pgc,dTime_s);
+    GAgent_LocalSendGAgentstatus(pgc,dTime_s);
     return ;
 }
 

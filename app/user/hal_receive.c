@@ -43,12 +43,12 @@ static uint32 guiLocalPacketStart;
 /* éžåŒ…å¤´éƒ¨åˆ†ï¼Œæ•°æ®0xffåº”è¯¥å˜æ¢ä¸º0xff 55,ä¸å½±å“æ ¡éªŒå’Œå’Œlenã€‚å› æ­¤ï¼ŒéžåŒ…å¤´éƒ¨åˆ†ï¼Œæ”¶åˆ°0xffåŽï¼Œè¯¥æ ‡å¿—ä½è¢«ç½®1 */
 static uint8 halRecKeyWord = 0;
 
-static uint8  ICACHE_FLASH_ATTR __halbuf_read(uint32 offset)
+static uint8 ICACHE_FLASH_ATTR __halbuf_read(uint32 offset)
 {
     return hal_RxBuffer[offset & HAL_BUF_MASK];
 }
 
-static void  ICACHE_FLASH_ATTR __halbuf_write(uint32 offset, uint8 value)
+static void ICACHE_FLASH_ATTR __halbuf_write(uint32 offset, uint8 value)
 {
     hal_RxBuffer[offset & HAL_BUF_MASK] = value;
 }
@@ -262,10 +262,10 @@ GAgent_Local_RecAll(pgcontext pgc)
     uint8 d_tmp = 0;
 
 //    uint8 fifo_len = (READ_PERI_REG(UART_STATUS(UART0))>>UART_RXFIFO_CNT_S)&UART_RXFIFO_CNT;
-//    for(idx=0;idx<fifo_len;idx++)//½ÓÊÕ´®¿ÚÊý¾Ý
+//    for(idx=0;idx<fifo_len;idx++)//???Õ´???????
 //    {
 //        d_tmp = READ_PERI_REG(UART_FIFO(UART0)) & 0xFF;
-//        read_count = fifo_len; //×Ü¹²ÐèÒª½ÓÊÜµÄÊý¾Ý³¤¶È
+//        read_count = fifo_len; //?Ü¹???Òª???Üµ????Ý³???
 //        hal_RxBuffer[(pos_current & HAL_BUF_MASK) + idx] = d_tmp;
 //    }
 //    WRITE_PERI_REG(UART_INT_CLR(UART0), UART_RXFIFO_FULL_INT_CLR|UART_RXFIFO_TOUT_INT_CLR);
@@ -279,7 +279,7 @@ GAgent_Local_RecAll(pgcontext pgc)
 //    {
 //        os_printf("%02x ",pgc->rtinfo.pRxBuf[i]);
 //    }
-    for(idx=0;idx<read_count;idx++)//½ÓÊÕ´®¿ÚÊý¾Ý
+    for(idx=0;idx<read_count;idx++)//???Õ´???????
     {
         hal_RxBuffer[(pos_current+idx) & HAL_BUF_MASK] = pgc->rtinfo.pRxBuf[idx];
     }

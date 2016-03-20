@@ -8,13 +8,13 @@
 #define PWM_CHANNEL	        2
 
 /*Definition of GPIO PIN params, for GPIO initialization*/
-#define PWM_0_OUT_IO_MUX    PERIPHS_IO_MUX_MTMS_U
-#define PWM_0_OUT_IO_NUM    14
-#define PWM_0_OUT_IO_FUNC   FUNC_GPIO14
+#define PWM_0_OUT_IO_MUX    PERIPHS_IO_MUX_MTDI_U
+#define PWM_0_OUT_IO_NUM    12
+#define PWM_0_OUT_IO_FUNC   FUNC_GPIO12
 
-#define PWM_1_OUT_IO_MUX    PERIPHS_IO_MUX_GPIO4_U
-#define PWM_1_OUT_IO_NUM    4
-#define PWM_1_OUT_IO_FUNC   FUNC_GPIO4
+#define PWM_1_OUT_IO_MUX    PERIPHS_IO_MUX_U0RXD_U
+#define PWM_1_OUT_IO_NUM    13
+#define PWM_1_OUT_IO_FUNC   FUNC_GPIO3
 
 #define Motor_stop          0
 #define Motor_Forward       1

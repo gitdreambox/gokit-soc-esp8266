@@ -6,6 +6,7 @@
 #include "cloud.h"
 #include "http.h"
 #include "platform.h"
+#include "gokit.h"
 
 pfMasterMCU_ReciveData PF_ReceiveDataformMCU = NULL;
 pfMasertMCU_SendData   PF_SendData2MCU = NULL;
@@ -428,6 +429,13 @@ Local_McuOTA_CheckValid( pgcontext pgc,uint8* localRxbuf,uint16 *piecelen )
 int32 ICACHE_FLASH_ATTR
 GAgent_LocalDataWriteP0( pgcontext pgc,int32 fd,ppacket pTxBuf,uint8 cmd )
 {
+    //andygao
+    //云端及app数据处理接口
+    gokit_ctl_process(pgc, pTxBuf);
+    GAgent_Printf(GAGENT_DEBUG, "@@@@ local data write p0 ");
+
+    return ;
+
     int32 ret = 0;
     uint16 datalen = 0;
     uint16 flag = 0;
@@ -493,6 +501,13 @@ int32 ICACHE_FLASH_ATTR
 GAgent_LocalDataWriteP0withFlag( pgcontext pgc,int32 fd,ppacket pTxBuf,
                                         uint8 cmd,int16 flag,int32 timeout )
 {
+    //andygao
+    //云端及app数据处理接口
+    gokit_ctl_process(pgc, pTxBuf);
+    GAgent_Printf(GAGENT_DEBUG, "@@@@ local data write p0 with flag ");
+
+    return ;
+
     int32 ret = RET_FAILED;
     uint16 datalen = 0;
     uint16 sendLen = 0;
@@ -683,24 +698,18 @@ Local_GetInfo_Tick(pgcontext pgc)
 void ICACHE_FLASH_ATTR
 Local_GetInfo( pgcontext pgc )
 {
-    int32 ret;
     uint8 i=0;
     uint8 count = 10;
+    uint16 mcu_passcodeEnableTime = 0;
+    int32 ret;
 
     pgc->rtinfo.getInfoflag = RET_SUCCESS;
 
-    int8 *mcu_protocol_ver = "00000001";
-    int8 *mcu_p0_ver = "00000002";
-    int8 *mcu_hard_ver = "00000003";
-    int8 *mcu_soft_ver = "00000004";
-    int8 *mcu_product_key = "1177f1f81d714c2499407fa9f6328269";
-    uint16 mcu_passcodeEnableTime = 0;
-
-    strcpy((char *)pgc->mcu.hard_ver,mcu_hard_ver);
-    strcpy((char *)pgc->mcu.soft_ver,mcu_soft_ver);
-    strcpy((char *)pgc->mcu.p0_ver,mcu_p0_ver);
-    strcpy((char *)pgc->mcu.protocol_ver,mcu_protocol_ver);
-    strcpy((char *)pgc->mcu.product_key,mcu_product_key);
+    strcpy((char *)pgc->mcu.hard_ver,MCU_HARDWARE_VER);
+    strcpy((char *)pgc->mcu.soft_ver, MCU_SOFTWARE_VER);
+    strcpy((char *)pgc->mcu.p0_ver, MCU_P0_VER);
+    strcpy((char *)pgc->mcu.protocol_ver, MCU_PROTOCOL_VER);
+    strcpy((char *)pgc->mcu.product_key, MCU_PRODUCT_KEY);
     pgc->mcu.passcodeEnableTime = mcu_passcodeEnableTime;
     pgc->mcu.passcodeTimeout = pgc->mcu.passcodeEnableTime;
 
@@ -1021,7 +1030,7 @@ GAgent_LocalSendUpgrade(pgcontext pgc,int32 fd,ppacket pTxBuf,uint16 piecelen,ui
     piececount = 0;
     return RET_FAILED;
 }
-void  ICACHE_FLASH_ATTR GAgent_LocalInformMcu(pgcontext pgc,uint32 firmwareLen)
+void ICACHE_FLASH_ATTR GAgent_LocalInformMcu(pgcontext pgc,uint32 firmwareLen)
 {
     uint32 i;
     resetPacket(pgc->rtinfo.Txbuf);
@@ -1062,6 +1071,10 @@ void  ICACHE_FLASH_ATTR GAgent_LocalInformMcu(pgcontext pgc,uint32 firmwareLen)
 void ICACHE_FLASH_ATTR
 GAgent_LocalSendGAgentstatus(pgcontext pgc,uint32 dTime_s )
 {
+    //andygao
+    return;
+
+    //WiFi状态检查并通知给MCU
     uint16 GAgentStatus = 0;
     uint16 LastGAgentStatus = 0;
     if( (pgc->rtinfo.GAgentStatus) != (pgc->rtinfo.lastGAgentStatus) )
@@ -1103,6 +1116,12 @@ GAgent_LocalInit( pgcontext pgc )
 void ICACHE_FLASH_ATTR
 GAgent_LocalTick( pgcontext pgc,uint32 dTime_s )
 {
+
+    gokit_tick();
+    return;
+
+    //1秒定时器
+    //可进行执行定时检测任务，如定时上报sensor状态
     if( 0 == pgc->mcu.mcu_upgradeflag )
     {
         return;
@@ -1127,6 +1146,9 @@ GAgent_LocalTick( pgcontext pgc,uint32 dTime_s )
 void ICACHE_FLASH_ATTR
 GAgent_BigDataTick( pgcontext pgc )
 {
+    return;
+
+    //大数据上传定时器，暂不需要，可直接return
     int32 ret=0;
     /* 发送文件接收信号 */
     if(pgc->rtinfo.local_send_ready_signal_flag)

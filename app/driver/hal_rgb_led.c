@@ -12,7 +12,7 @@
 *            www.gizwits.com
 *
 *********************************************************/
-#include "driver/Hal_rgb_led.h"
+#include "driver/hal_rgb_led.h"
 
 static void rgb_delay(unsigned int  us)
 {

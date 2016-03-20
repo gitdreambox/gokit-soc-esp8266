@@ -4,7 +4,7 @@
 #include "soc.h"
 
 /* Define your drive pin */
-#define Infrared_GPIO_PIN       15
+#define Infrared_GPIO_PIN       16
 
 /* Set GPIO Direction */
 #define GET_INF                 GPIO_INPUT_GET(GPIO_ID_PIN(Infrared_GPIO_PIN))

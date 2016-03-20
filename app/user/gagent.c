@@ -660,10 +660,10 @@ GAgent_Tick( pgcontext pgc )
     }
     GAgent_DevTick();
     GAgent_CloudTick( pgc,1 );
-//    GAgent_LocalTick( pgc,1 );
+    GAgent_LocalTick( pgc,1 );
     GAgent_LanTick( pgc,1 );
     GAgent_WiFiEventTick( pgc,1 );
     GAgent_RefreshIPTick( pgc,1 );
-//    GAgent_BigDataTick( pgc );
+    GAgent_BigDataTick( pgc );
 }
 

@@ -12,7 +12,7 @@
 *            www.gizwits.com
 *
 *********************************************************/
-#include "driver/Hal_temp_hum.h"
+#include "driver/hal_temp_hum.h"
 
 static void temp_hum_delay(unsigned int us)
 {

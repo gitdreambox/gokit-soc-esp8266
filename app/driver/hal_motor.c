@@ -12,7 +12,7 @@
 *            www.gizwits.com
 *
 *********************************************************/
-#include "driver/Hal_motor.h"
+#include "driver/hal_motor.h"
 #include "pwm.h"
 
 struct pwm_param Motor_param;

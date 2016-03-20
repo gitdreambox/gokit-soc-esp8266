@@ -10,8 +10,6 @@
 *******************************************************************************/
 
 #include "gagent.h"
-#include "soc.h"
-
 #include "gagent_typedef.h"
 
 #include "ets_sys.h"
@@ -21,6 +19,8 @@
 
 #include "user_devicefind.h"
 #include "user_webserver.h"
+
+#include "gokit.h"
 
 #if ESP_PLATFORM
 #include "user_esp_platform.h"
@@ -40,12 +40,10 @@ unsigned int default_private_key_len = 0;
 
 extern pgcontext pgContextData;
 
-extern soc_pcontext soc_context_Data; 
-
 #define TaskQueueLen    200
 LOCAL  os_event_t   TaskQueue[TaskQueueLen];
 
-void  ICACHE_FLASH_ATTR user_rf_pre_init(void)
+void ICACHE_FLASH_ATTR user_rf_pre_init(void)
 {
 }
 
@@ -107,15 +105,15 @@ dataHandle_task(os_event_t *events)
  * Parameters   : none
  * Returns      : none
 *******************************************************************************/
-void user_init(void)
+void ICACHE_FLASH_ATTR user_init(void)
 {
     wifi_station_set_auto_connect(1);
     wifi_set_sleep_type(NONE_SLEEP_T);//set none sleep mode
     espconn_tcp_set_max_con(10);
     LOCAL os_timer_t test_timer;
-    LOCAL os_timer_t test_timer_1; 
-    uart_init_3(9600,74880);
+    uart_init_3(9600,115200/*74880*/);
     UART_SetPrintPort(1);
+
     os_printf("\r\n\n\n---------------SDK version:%s--------------\n", system_get_sdk_version());
     os_printf("\r\nsystem_get_free_heap_size=%d\n",system_get_free_heap_size());
 
@@ -141,23 +139,14 @@ void user_init(void)
         os_printf("---UPGRADE_FW_BIN2---\n");
     }
 
+    gokit_hardware_init();
+
     system_os_task(dataHandle_task, 1, TaskQueue, TaskQueueLen);
     GAgent_Init( &pgContextData );
     GAgent_dumpInfo( pgContextData );
-       
     //start timer
     os_timer_disarm(&test_timer);
     os_timer_setfn(&test_timer, (os_timer_func_t *)GAgent_Tick, pgContextData);
     os_timer_arm(&test_timer, 1000, 1);
-	
-    /* USER LEVEL */
-    soc_hw_init();
-    
-    soc_sw_init(&soc_context_Data); 
-
-    //start soc timer
-    os_timer_disarm(&test_timer_1);
-    os_timer_setfn(&test_timer_1, (os_timer_func_t *)soc_tick, soc_context_Data); 
-    os_timer_arm(&test_timer_1, SOC_TIME_OUT, 1); 
 }
 

@@ -24,7 +24,7 @@ BOOT?=none
 APP?=0
 SPI_SPEED?=40
 SPI_MODE?=QIO
-SPI_SIZE_MAP?=0
+SPI_SIZE_MAP?=6
 
 ifeq ($(BOOT), new)
     boot = new
@@ -32,7 +32,7 @@ else
     ifeq ($(BOOT), old)
         boot = old
     else
-        boot = new
+        boot = none
     endif
 endif
 
@@ -42,7 +42,7 @@ else
     ifeq ($(APP), 2)
         app = 2
     else
-        app = 1
+        app = 0
     endif
 endif
 
@@ -116,8 +116,8 @@ else
               addr = 0x101000
             endif
           else
-            size_map = 6
-            flash = 4096
+            size_map = 0
+            flash = 512
             ifeq ($(app), 2)
               addr = 0x41000
             endif
