@@ -14,6 +14,7 @@
 *********************************************************/
 #include "driver/hal_motor.h"
 #include "pwm.h"
+#include "gagent.h"
 
 struct pwm_param Motor_param;
 

@@ -2,7 +2,9 @@
 #define _HAL_MOTOR_H
 
 #include <stdio.h>
-#include "soc.h"
+#include <c_types.h>
+#include <gpio.h>
+#include <eagle_soc.h>
 
 /*Define the channel number of PWM*/
 #define PWM_CHANNEL	        2

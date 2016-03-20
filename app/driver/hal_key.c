@@ -13,6 +13,7 @@
 *
 *********************************************************/
 #include "driver/hal_key.h"
+#include "gokit.h"
 
 uint32 KeyCountTime; 
 

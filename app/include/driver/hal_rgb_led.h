@@ -2,7 +2,9 @@
 #define _HAL_RGB_LED_H
 
 #include <stdio.h>
-#include "soc.h"
+#include <c_types.h>
+#include <gpio.h>
+#include <eagle_soc.h>
 
 /* Define your drive pin */
 #define GPIO_RGB_SCL            4

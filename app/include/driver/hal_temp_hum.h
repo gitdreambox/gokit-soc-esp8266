@@ -2,7 +2,9 @@
 #define _HAL_HEMP_HUM_H
 
 #include <stdio.h>
-#include "soc.h"
+#include <c_types.h>
+#include <gpio.h>
+#include <eagle_soc.h>
 
 /* Define your drive pin */
 #define DHT11_GPIO_PIN      12

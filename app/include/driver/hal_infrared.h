@@ -1,7 +1,9 @@
 #ifndef _HAL_INFRARED_H
 #define _HAL_INFRARED_H
 #include <stdio.h>
-#include "soc.h"
+#include <c_types.h>
+#include <gpio.h>
+#include <eagle_soc.h>
 
 /* Define your drive pin */
 #define Infrared_GPIO_PIN       16

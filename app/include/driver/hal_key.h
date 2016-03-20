@@ -2,7 +2,9 @@
 #define _HAL_KEY_H_
 
 #include <stdio.h>
-#include "soc.h"
+#include <c_types.h>
+#include <gpio.h>
+#include <eagle_soc.h>
 
 /* Define your drive pin */
 #define GPIO_KEY1_PIN           14
