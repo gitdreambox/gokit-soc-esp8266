@@ -1071,6 +1071,9 @@ void ICACHE_FLASH_ATTR GAgent_LocalInformMcu(pgcontext pgc,uint32 firmwareLen)
 void ICACHE_FLASH_ATTR
 GAgent_LocalSendGAgentstatus(pgcontext pgc,uint32 dTime_s )
 {
+    gokit_wifi_Status(pgc);
+    GAgent_Printf(GAGENT_DEBUG, "@@@@ local GAgent status "); 
+    
     //andygao
     return;
 

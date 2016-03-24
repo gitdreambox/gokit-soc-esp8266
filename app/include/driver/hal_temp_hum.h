@@ -7,7 +7,7 @@
 #include <eagle_soc.h>
 
 /* Define your drive pin */
-#define DHT11_GPIO_PIN      12
+#define DHT11_GPIO_PIN      5
 
 /* Set GPIO Direction */
 #define DHT11_IO_IN         GPIO_DIS_OUTPUT(GPIO_ID_PIN(DHT11_GPIO_PIN))// gpio_output_set(0, 0, 0, GPIO_ID_PIN(DHT11_GPIO_PIN))≤ªø…”√

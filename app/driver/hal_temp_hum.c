@@ -13,6 +13,7 @@
 *
 *********************************************************/
 #include "driver/hal_temp_hum.h"
+#include "osapi.h"
 
 static void temp_hum_delay(unsigned int us)
 {
@@ -26,7 +27,7 @@ static void hdt11_rst(void)
 {
     DHT11_IO_OUT; 											    //SET OUTPUT
     DHT11_OUT_LOW;                                              //GPIOA.0=0
-    temp_hum_delay(20*1000);                                    //Pull down Least 18ms
+    temp_hum_delay(18*1000);                                    //Pull down Least 18ms
     DHT11_OUT_HIGH;                                             //GPIOA.0=1
 }
 
@@ -121,7 +122,7 @@ u8 dh11_init(void)
 {
     /* Migrate your driver code */
     
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12); 
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
 
     hdt11_rst(); 
     return hdt11_check(); 

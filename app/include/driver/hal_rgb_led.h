@@ -7,9 +7,9 @@
 #include <eagle_soc.h>
 
 /* Define your drive pin */
-#define GPIO_RGB_SCL            4
-#define GPIO_RGB_SDA            14
-#define GPIO_RGB_POW            15
+#define GPIO_RGB_SCL            15
+#define GPIO_RGB_SDA            4
+//#define GPIO_RGB_POW            15
 
 /* Set GPIO Direction */
 #define SCL_LOW 	            GPIO_OUTPUT_SET(GPIO_ID_PIN(GPIO_RGB_SCL), 0)
@@ -18,7 +18,7 @@
 #define SDA_LOW		            GPIO_OUTPUT_SET(GPIO_ID_PIN(GPIO_RGB_SDA), 0)
 #define SDA_HIGH	            GPIO_OUTPUT_SET(GPIO_ID_PIN(GPIO_RGB_SDA), 1)
 
-#define POW_HIGH	            GPIO_OUTPUT_SET(GPIO_ID_PIN(GPIO_RGB_POW), 1)
+//#define POW_HIGH	            GPIO_OUTPUT_SET(GPIO_ID_PIN(GPIO_RGB_POW), 1)
 
 
 #define R_MAX                   255

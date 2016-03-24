@@ -6,9 +6,11 @@
 #include <gpio.h>
 #include <eagle_soc.h>
 
+//#define KEY1_EANBLE
+
 /* Define your drive pin */
-#define GPIO_KEY1_PIN           14
-#define GPIO_KEY2_PIN           0
+#define GPIO_KEY1_PIN           0
+#define GPIO_KEY2_PIN           14
 
 /* Set GPIO Direction */
 #define GET_KEY1 	            GPIO_INPUT_GET(GPIO_ID_PIN(GPIO_KEY1_PIN))

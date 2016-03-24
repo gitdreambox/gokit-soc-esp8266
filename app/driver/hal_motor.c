@@ -14,61 +14,66 @@
 *********************************************************/
 #include "driver/hal_motor.h"
 #include "pwm.h"
-#include "gagent.h"
+//#include "gagent.h"
 
 struct pwm_param Motor_param;
 
 /******************************************************************************
  * FunctionName : user_light_set_duty
  * Description  : set each channel's duty params
- * Parameters   : uint8 duty    : 0 ~ PWM_DEPTH
- *                uint8 channel : LIGHT_RED/LIGHT_GREEN/LIGHT_BLUE
+ * Parameters   : uint8 duty    : duty 的范围随 PWM 周期改变， 
+ *                              最大值为： Period * 1000 /45 。
+ *                              例如， 1KHz PWM， duty 范围是： 0 ~ 22222
+ *                uint8 channel : MOTOR_A/MOTOR_B
  * Returns      : NONE
 *******************************************************************************/
 void ICACHE_FLASH_ATTR
-user_motor_set_duty(uint32 duty, uint8 channel) 
+Motor_PWM_Control(uint8_t m0, uint8_t m1)
 {
-    if(duty != Motor_param.duty[channel])
-    {
-
-        pwm_set_duty(duty, channel);
-
-        pwm_start();
-
-        Motor_param.duty[channel] = pwm_get_duty(channel);
-    }
-}
-
-void ICACHE_FLASH_ATTR
-Motor_PWM_Control(uint8_t m1, uint8_t m2)
-{
-    uint16_t temp = MOTOR_PRAR; 
+    uint32 temp_m0 = 0; 
+    uint32 temp_m1 = 0; 
 	
-    user_motor_set_duty(m1 * temp, 0); 
-    user_motor_set_duty(m2 * temp, 1); 
+    temp_m0 = (uint32)((m0 * 1.0 / (MOTOR_SFCT_STA )) * (MOTOR_MAX_DUTY)); 
+    temp_m1 = (uint32)((m1 * 1.0 / (MOTOR_SFCT_STA)) * (MOTOR_MAX_DUTY)); 
+    
+//  GAgent_Printf(GAGENT_DEBUG, "temp_m0 : %d", temp_m0);
+//  GAgent_Printf(GAGENT_DEBUG, "temp_m1 : %d", temp_m1);
+    
+    if(temp_m0 != Motor_param.duty[CHANNEL_0]) 
+    {
+        pwm_set_duty(temp_m0, CHANNEL_0); 
+        Motor_param.duty[CHANNEL_0] = pwm_get_duty(CHANNEL_0); 
+    }
+    if(temp_m1 != Motor_param.duty[CHANNEL_1]) 
+    {
+        pwm_set_duty(temp_m1, CHANNEL_1); 
+        Motor_param.duty[CHANNEL_1] = pwm_get_duty(CHANNEL_1); 
+    }
+    
+    pwm_start();
 	
 }
 
 void ICACHE_FLASH_ATTR
 motor_control(MOTOR_T status)
 {		
-    if((0 > status) || (9 < status)) 
+    if((0 > status) || (10 < status)) 
     {
-        GAgent_Printf(GAGENT_ERROR, "Motor_status Error : [%d]", status); 
+//      os_printf("Motor_status Error : [%d] \r\n", status);
     }
     
     if(status == 5) 
 	{
-        Motor_PWM_Control(0, 0); 
+        Motor_PWM_Control(0, 0);
 	}
-	else if (status > 5)
-	{
-        Motor_PWM_Control(status, status); 
-	}
-	else if (status < 5)
-	{
-        Motor_PWM_Control(9 - status, 0); 
-	}
+    else if (status > 5)
+    {
+        Motor_PWM_Control(MOTOR_MIN_STA, status - MOTOR_SFCT_STA);
+    }
+    else if (status < 5)
+    {
+        Motor_PWM_Control(MOTOR_SFCT_STA, status);
+    }
 
 }
 
@@ -77,10 +82,7 @@ motor_init(void)
 {
     /* Migrate your driver code */
     
-    if(Motor_param.period > 10000 || Motor_param.period < 1000)
-    {
-        Motor_param.period = 1000;
-    }
+    Motor_param.period = MOTOR_PERIOD; 
 
     uint32 io_info[][3] = {
         { PWM_0_OUT_IO_MUX, PWM_0_OUT_IO_FUNC, PWM_0_OUT_IO_NUM },
@@ -91,16 +93,9 @@ motor_init(void)
 
     /*PIN FUNCTION INIT FOR PWM OUTPUT*/
     pwm_init(Motor_param.period, pwm_duty_init, PWM_CHANNEL, io_info);
-
-    os_printf("Motor A: %d \r\n", Motor_param.duty[MOTOR_A]);
-    os_printf("Motor B: %d \r\n", Motor_param.duty[MOTOR_B]);
-    os_printf("Motor P: %d \r\n", Motor_param.period);
-
-    uint32 light_init_target[8] = { 0 };
-    os_memcpy(light_init_target, Motor_param.duty, sizeof(Motor_param.duty));
     
     set_pwm_debug_en(0); //disable debug print in pwm driver
-    os_printf("PWM version : %08x \r\n", get_pwm_version());
+//  os_printf("PWM version : %08x \r\n", get_pwm_version());
     
     return;
 }
