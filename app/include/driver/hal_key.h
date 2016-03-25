@@ -6,7 +6,7 @@
 #include <gpio.h>
 #include <eagle_soc.h>
 
-//#define KEY1_EANBLE
+#define KEY1_EANBLE
 
 /* Define your drive pin */
 #define GPIO_KEY1_PIN           0

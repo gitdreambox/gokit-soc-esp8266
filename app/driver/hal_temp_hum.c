@@ -121,7 +121,6 @@ u8 hdt11_read_data(u8 * temperature, u8 * humidity)
 u8 dh11_init(void)
 {
     /* Migrate your driver code */
-    
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
 
     hdt11_rst(); 

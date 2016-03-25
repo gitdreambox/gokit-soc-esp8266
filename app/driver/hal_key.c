@@ -31,13 +31,13 @@ key_value_read(void)
     uint8_t ReadKey;
 
     #ifdef KEY1_EANBLE
-    if(!GET_KEY1) 
+    if(!GET_KEY1)
     {
         ReadKey |= PRESS_KEY1;
     }
     #endif
-    
-    if(!GET_KEY2) 
+
+    if(!GET_KEY2)
     {
         ReadKey |= PRESS_KEY2;
     }
@@ -160,15 +160,14 @@ key_gpio_init(void)
     //key1
     #ifdef KEY1_EANBLE
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0);
-    GPIO_DIS_OUTPUT(GPIO_ID_PIN(GPIO_KEY1_PIN));//  gpio_output_set(0, 0, 0, GPIO_ID_PIN(GPIO_KEY1_PIN));
+    GPIO_OUTPUT_SET(GPIO_ID_PIN(GPIO_KEY1_PIN), 1);
+    PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);
+    GPIO_DIS_OUTPUT(GPIO_ID_PIN(GPIO_KEY1_PIN));
     #endif
-    
+
     //key2
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14); 
-//  gpio_output_set(0, 0, 0, GPIO_ID_PIN(GPIO_KEY2_PIN));
-    
-    GPIO_DIS_OUTPUT(GPIO_ID_PIN(GPIO_KEY2_PIN)); 
-    
-//  PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);
+    GPIO_DIS_OUTPUT(GPIO_ID_PIN(GPIO_KEY2_PIN));
+
 }
 
