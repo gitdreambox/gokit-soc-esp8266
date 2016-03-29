@@ -1,20 +1,42 @@
+
+/*********************************************************
+*
+* @file      gokit.c
+* @author    Gizwtis
+* @version   V3.0
+* @date      2016-03-09
+*
+* @brief     »úÖÇÔÆ Ö»ÎªÖÇÄÜÓ²¼þ¶øÉú
+*            Gizwits Smart Cloud  for Smart Products
+*            Á´½Ó|ÔöÖµ|¿ª·Å|ÖÐÁ¢|°²È«|×ÔÓÐ|×ÔÓÉ|ÉúÌ¬
+*            www.gizwits.com
+*
+*********************************************************/
+
 #include "gagent.h"
 #include "gagent_typedef.h"
 #include "gokit.h"
 #include "driver/hal_key.h"
 #include "driver/hal_infrared.h"
+#include "driver/hal_motor.h"
+#include "driver/hal_rgb_led.h"
+#include "driver/hal_temp_hum.h"
 
 extern pgcontext pgContextData;
 
 /*Global Variable*/
-write_info_t wirte_typedef; 
+write_info_t wirte_typedef;
 read_info_t read_typedef;
+gokit_info_t gokit_info;
 
-th_typedef_t temphum_typedef;
-LOCAL uint32 gokit_tick_count = 0; 
-uint8_t report_flag = 0; 
-uint8_t Set_LedStatus = 0;
-uint8_t NetConfigureFlag = 0;
+extern th_typedef_t temphum_typedef;
+LOCAL key_typedef_t * single_key[GPIO_KEY_NUM]; 
+LOCAL keys_typedef_t keys; 
+
+uint32 gokit_tick_count = 0;
+uint8_t gokit_report_flag = 0;
+uint8_t gokit_led_status = 0;
+uint8_t gokit_config_flag = 0; 
 
 LOCAL uint16_t ICACHE_FLASH_ATTR gokit_ntohs(uint16_t value)
 {
@@ -31,6 +53,25 @@ LOCAL uint16_t ICACHE_FLASH_ATTR gokit_ntohs(uint16_t value)
     return tmp_value;
 }
 
+uint8_t ble2ble_get_flag(uint8_t bit)
+{
+    return ((gokit_info.flag >> bit) & 0x01); 
+}
+
+uint16_t ble2ble_set_flag(uint8_t bit)
+{
+    gokit_info.flag |= (0x01 << bit); 
+    
+    return (gokit_info.flag); 
+}
+
+uint16_t ble2ble_clear_flag(uint8_t bit)
+{
+    gokit_info.flag &= ~(0x01 << bit); 
+    
+    return (gokit_info.flag); 
+}
+
 LOCAL void ICACHE_FLASH_ATTR gokit_th_handle(void)
 {
     static uint16_t th_ctime = 0;
@@ -42,23 +83,22 @@ LOCAL void ICACHE_FLASH_ATTR gokit_th_handle(void)
     {
         th_ctime = 0;
  
-        hdt11_read_data(&curTem, &curHum);
-//      GAgent_Printf(GAGENT_DEBUG, "Temperature : %d , Humidity : %d", curTem, curHum);
+        dht11_read_data(&curTem, &curHum); 
         
-        //é¦–æ¬¡æ•°æ®ä¸»åŠ¨ä¸Šä¼ 
+        //Take time every 200ms temperature and humidity data values
         if((temphum_typedef.pre_tem_means_val == NULL) || (temphum_typedef.pre_hum_means_val == NULL)) 
         {
             temphum_typedef.pre_tem_means_val = curTem; 
             temphum_typedef.pre_hum_means_val = curHum; 
 
-            //å‡†å¤‡ä¸ŠæŠ¥æ•°æ®
+            //Being the first time and the initiative to report
             read_typedef.temperature = temphum_typedef.pre_tem_means_val + TEM_OFFSET_VAL; 
             read_typedef.humidity = temphum_typedef.pre_hum_means_val;
             
-            report_flag = 1; 
+            gokit_report_flag = 1; 
         }
         
-        //å‚¨å­˜è¿‘åæ¬¡çš„æ¸©æ¹¿åº¦æ•°å€¼
+        //Cycle store ten times stronghold
         if(10 > temphum_typedef.th_num) 
         {
             temphum_typedef.th_bufs[temphum_typedef.th_num][0] = curTem; 
@@ -72,10 +112,10 @@ LOCAL void ICACHE_FLASH_ATTR gokit_th_handle(void)
         }
     }
     
-    //æ¯ TH_MEANS_TIMEOUT 'Sè®¡ç®—ä¸€æ¬¡æ¸©æ¹¿åº¦å¹³å‡å€¼
+    //Periodically calculate the average temperature and humidity
     if(TH_MEANS_TIMEOUT < th_meanstime) 
     {
-        uint8_t cur_i;
+        uint8_t cur_i = 0; 
         
         th_meanstime = 0; 
 
@@ -86,20 +126,21 @@ LOCAL void ICACHE_FLASH_ATTR gokit_th_handle(void)
         }
         
         tem_means = tem_means / 10;
-        hum_means = hum_means / 10;  
-//      GAgent_Printf(GAGENT_CRITICAL, "Temperature : %d , Humidity : %d", tem_means, hum_means);
+        hum_means = hum_means / 10;
         
-        //åˆ¤æ–­å‰åŽä¸¤æ¬¡å¹³å‡å€¼æ˜¯å¦ç›¸åŒ ä¸åŒåˆ™ä¸»åŠ¨ä¸Šä¼ 
+        //Before and after the two values, it is determined whether or not reported
         if((temphum_typedef.pre_tem_means_val != tem_means) || (temphum_typedef.pre_hum_means_val != hum_means)) 
         {
-            temphum_typedef.pre_tem_means_val = tem_means;
-            temphum_typedef.pre_hum_means_val = hum_means;
-                
-            //å‡†å¤‡ä¸ŠæŠ¥æ•°æ®
+            temphum_typedef.pre_tem_means_val = (uint8_t)tem_means; 
+            temphum_typedef.pre_hum_means_val = (uint8_t)hum_means; 
+
+            //Initiative to report data
             read_typedef.temperature = temphum_typedef.pre_tem_means_val + TEM_OFFSET_VAL; 
             read_typedef.humidity = temphum_typedef.pre_hum_means_val; 
             
-            report_flag = 1; 
+            GAgent_Printf(GAGENT_DEBUG, "Temperature : %d , Humidity : %d", read_typedef.temperature, read_typedef.humidity); 
+            
+            gokit_report_flag = 1; 
         }
     }
     
@@ -113,68 +154,13 @@ LOCAL void ICACHE_FLASH_ATTR gokit_ir_handle(void)
     uint8_t ir_value = 0; 
     
     ir_value = ir_update_status();
+    
     if(ir_value != read_typedef.infrared)
     {
         GAgent_Printf(GAGENT_DEBUG, "@@@@ ir status %d\n", ir_value);
         read_typedef.infrared = ir_value;
-        report_flag = 1;
+        gokit_report_flag = 1;
     }
-}
-
-LOCAL void ICACHE_FLASH_ATTR gokit_key_handle(void)
-{
-    uint8_t key_value = 0;
-
-    key_value = key_state_read();
-    if(key_value & KEY_UP)
-    {
-        if(key_value & PRESS_KEY1)
-        {
-            GAgent_Printf(GAGENT_CRITICAL, "@@@@ key1, press \n"); 
-        }
-
-        if(key_value & PRESS_KEY2)
-        {
-            GAgent_Printf(GAGENT_CRITICAL, "@@@@ key2, soft ap mode \n"); 
-            
-            rgb_control(250, 0, 0); 
-            NetConfigureFlag = 1;
-            GAgent_Config(SOFTAP_MODE, pgContextData); 
-        }
-    }
-
-    if(key_value & KEY_LONG)
-    {
-        if(key_value & PRESS_KEY1)
-        {
-            GAgent_Printf(GAGENT_CRITICAL, "@@@@ key1, default setup\n"); 
-            //GAgent_Clean_Config(pgContextData);
-            //GAgent_DevSaveConfigData( &(pgContextData->gc) );
-            //msleep(1);
-            //GAgent_DevReset();
-        }
-
-        if(key_value & PRESS_KEY2)
-        {
-            GAgent_Printf(GAGENT_CRITICAL, "@@@@ key2, airlink mode\n"); 
-            
-            rgb_control(0, 250, 0); 
-            NetConfigureFlag = 1;
-            GAgent_Config(AIRLINK_MODE, pgContextData); 
-        }
-    }
-
-}
-
-LOCAL void ICACHE_FLASH_ATTR gokit_timer_func(void)
-{
-    /* TEST MODE */
-//  soc_sensortest();
-        
-    gokit_key_handle();
-    gokit_th_handle();
-    gokit_ir_handle();
-
 }
 
 void ICACHE_FLASH_ATTR gokit_read_data(void)
@@ -219,11 +205,11 @@ void ICACHE_FLASH_ATTR gokit_wifi_Status(pgcontext pgc)
 
     GAgentStatus = pgc->rtinfo.GAgentStatus;
 
-    if(((GAgentStatus & WIFI_CONNCLOUDS) == WIFI_CONNCLOUDS) && (NetConfigureFlag == 1))
+    if(((GAgentStatus & WIFI_CONNCLOUDS) == WIFI_CONNCLOUDS) && (gokit_config_flag == 1))
     {
         GAgent_Printf(GAGENT_CRITICAL, "@@@@ W2M->WIFI_CONNCLOUDS \r\n"); 
         
-        NetConfigureFlag = 0;
+        gokit_config_flag = 0;
         rgb_control(0, 0, 0);
     }
 }
@@ -243,9 +229,7 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
 
             if(0x01 == (ctl_data->attr_flags >> 0) && 0x01)
             {
-//          GAgent_Printf(GAGENT_DEBUG, "########## led onoff %x \n", ctl_data->led_cmd);
-
-                if(Set_LedStatus != 1)
+                if(gokit_led_status != 1)
                 {
 
                     if(wirte_typedef.led_cmd == LED_OnOff)
@@ -274,13 +258,13 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                     read_typedef.led_r = 0;
                     read_typedef.led_g = 0;
                     read_typedef.led_b = 0;
-                    Set_LedStatus = 0;
+                    gokit_led_status = 0;
                     rgb_control(0, 0, 0);
                     GAgent_Printf(GAGENT_DEBUG, "########## SetLED LED_Costom \r\n");
                 }
                 if(wirte_typedef.led_cmd == LED_Yellow)
                 {
-                    Set_LedStatus = 1;
+                    gokit_led_status = 1;
                     read_typedef.led_cmd = LED_Yellow;
                     read_typedef.led_r = 254;
                     read_typedef.led_g = 254;
@@ -296,7 +280,7 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                     read_typedef.led_r = 254;
                     read_typedef.led_g = 0;
                     read_typedef.led_b = 70;
-                    Set_LedStatus = 1;
+                    gokit_led_status = 1;
                     rgb_control(254, 0, 70);
                     GAgent_Printf(GAGENT_DEBUG, "########## SetLED LED_Purple \r\n");
                 }
@@ -306,7 +290,7 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                     read_typedef.led_r = 238;
                     read_typedef.led_g = 30;
                     read_typedef.led_b = 30;
-                    Set_LedStatus = 1;
+                    gokit_led_status = 1;
                     rgb_control(238, 30, 30);
                     GAgent_Printf(GAGENT_DEBUG, "########## SetLED LED_Pink \r\n");
                 }
@@ -314,7 +298,7 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
 
             if(0x01 == (ctl_data->attr_flags >> 2) && 0x01)
             {
-                if(Set_LedStatus != 1)
+                if(gokit_led_status != 1)
                 {
                     read_typedef.led_r = wirte_typedef.led_r;
                     GAgent_Printf(GAGENT_DEBUG, "########## W2D Control LED_R = %d \r\n", wirte_typedef.led_r);
@@ -324,7 +308,7 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
 
             if(0x01 == (ctl_data->attr_flags >> 3) && 0x01)
             {
-                if(Set_LedStatus != 1)
+                if(gokit_led_status != 1)
                 {
                     read_typedef.led_g = wirte_typedef.led_g;
                     GAgent_Printf(GAGENT_DEBUG, "########## W2D Control LED_G = %d \r\n", wirte_typedef.led_g);
@@ -334,7 +318,7 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
 
             if(0x01 == (ctl_data->attr_flags >> 4) && 0x01)
             {
-                if(Set_LedStatus != 1)
+                if(gokit_led_status != 1)
                 {
                     read_typedef.led_b = wirte_typedef.led_b;
                     GAgent_Printf(GAGENT_DEBUG, "########## W2D Control LED_B = %d \r\n", wirte_typedef.led_b);
@@ -355,8 +339,8 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                 #endif
             }
             
-            //Ã¿ÉèÖÃÒ»´Î´«¸ÐÆ÷ÔòÖØÐÂÉÏ±¨Ò»´Î×îÐÂ×´Ì¬
-            report_flag = 1; 
+            //ÃƒÂ¿Ã‰Ã¨Ã–ÃƒÃ’Â»Â´ÃŽÂ´Â«Â¸ÃÃ†Ã·Ã”Ã²Ã–Ã˜ÃÃ‚Ã‰ÃÂ±Â¨Ã’Â»Â´ÃŽÃ—Ã®ÃÃ‚Ã—Â´ÃŒÂ¬
+            gokit_report_flag = 1; 
             
             break;
         }
@@ -374,174 +358,99 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
     return;
 }
 
-void ICACHE_FLASH_ATTR gokit_hardware_init(void)
-{
-    LOCAL os_timer_t gokit_timer;
-
-    memset((uint8_t *)&read_typedef, 0, sizeof(read_info_t)); 
-    memset((uint8_t *)&wirte_typedef, 0, sizeof(write_info_t)); 
-    memset((uint8_t *)&temphum_typedef, 0, sizeof(th_typedef_t)); 
-
-    #ifdef RGBLED_ON
-    rgb_gpio_init();
-    rgb_led_init();
-    #endif
-    #ifdef KEY_ON
-    key_gpio_init();
-    #endif
-    #ifdef MOTOR_ON
-    motor_init();
-    motor_control(5); 
-    read_typedef.motor = 5;
-    #endif
-    #ifdef TEMPHUM_ON
-    uint8 ret;
-    ret = dh11_init();
-    GAgent_Printf(GAGENT_INFO, "dh11_init : %d ", ret);
-    #endif
-    #ifdef INFRARED_ON
-    ir_init();
-    #endif    
-
-    os_timer_disarm(&gokit_timer);
-    os_timer_setfn(&gokit_timer, (os_timer_func_t *)gokit_timer_func, NULL);
-    os_timer_arm(&gokit_timer, 1, 1);
-}
-
 void ICACHE_FLASH_ATTR gokit_tick(void)
 {
 
     GAgent_Printf(GAGENT_DEBUG, "@@@@ gokit_task \n");
 
-    if(0 == (gokit_tick_count % 600)) //600s，传感器状态不变，上报数据。
+    if(0 == (gokit_tick_count % 600)) //600sï¼Œä¼ æ„Ÿå™¨çŠ¶æ€ä¸å˜ï¼Œä¸ŠæŠ¥æ•°æ®ã€‚
     {
-        report_flag = 1;
+        gokit_report_flag = 1;
     }
 
-    if(1 == report_flag)
+    if(1 == gokit_report_flag)
     {
         gokit_report_data();
-        report_flag = 0;
+        gokit_report_flag = 0;
     }
 
     gokit_tick_count++;
 }
 
-void ICACHE_FLASH_ATTR
-soc_sensortest(void)
+void ICACHE_FLASH_ATTR gokit_timer_func(void)
 {
-    static uint32 SysCountTime = 0;
+    gokit_th_handle();
+    gokit_ir_handle();
+}
+
+LOCAL void ICACHE_FLASH_ATTR key2_short_press(void)
+{
+    GAgent_Printf(GAGENT_CRITICAL, "#### key2, soft ap mode \n"); 
     
-    SysCountTime++;
+    rgb_control(250, 0, 0); 
+    gokit_config_flag = 1;
+    GAgent_Config(WIFI_SOFTAPMODE, pgContextData); 
+}
 
-    if(SysCountTime >= MAX_SOC_TIMOUT) 
-    {
-        static uint8 Mocou = 0;
-        static uint8 rgbcou = 0; 
-        static uint8 thcou = 0; 
+LOCAL void ICACHE_FLASH_ATTR key2_long_press(void)
+{
+    GAgent_Printf(GAGENT_CRITICAL, "#### key2, airlink mode\n"); 
+    
+    rgb_control(0, 250, 0); 
+    gokit_config_flag = 1;
+    GAgent_Config(WIFI_STATIONMODE, pgContextData); 
+}
 
-        SysCountTime = 0; 
+LOCAL void ICACHE_FLASH_ATTR key1_short_press(void)
+{
+    GAgent_Printf(GAGENT_CRITICAL, "#### key1, press \n"); 
+}
 
-        /* Test LOG model */
-//      GAgent_Printf(GAGENT_CRITICAL, "ST : %d",system_get_time());
+LOCAL void ICACHE_FLASH_ATTR key1_long_press(void)
+{
+    GAgent_Printf(GAGENT_CRITICAL, "#### key1, default setup\n"); 
 
-        #ifdef TEMPHUM_ON
-        uint8_t curTem = 0, curHum = 0;
-        hdt11_read_data(&curTem, &curHum);
-        GAgent_Printf(GAGENT_CRITICAL, "Temperature : %d , Humidity : %d", curTem, curHum);
-        #endif
+    GAgent_Clean_Config(pgContextData);
+    GAgent_DevSaveConfigData(&(pgContextData->gc));
+    msleep(1);
+    GAgent_DevReset(); 
+}
 
-        #ifdef INFRARED_ON
-        GAgent_Printf(GAGENT_CRITICAL, "InfIO : %d", ir_update_status());
-        #endif
+void ICACHE_FLASH_ATTR gokit_hardware_init(void)
+{
+    //rgb led init
+    rgb_gpio_init();
+    rgb_led_init();
 
-        #ifdef KEY_ON
-        GAgent_Printf(GAGENT_CRITICAL, "key1 : %d", GPIO_INPUT_GET(GPIO_ID_PIN(GPIO_KEY1_PIN)));
-        GAgent_Printf(GAGENT_CRITICAL, "key2 : %d", GPIO_INPUT_GET(GPIO_ID_PIN(GPIO_KEY2_PIN)));
-        #endif
-        
-        #ifdef MOTOR_ON
+    //key init
+    single_key[0] = key_init_one(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,
+                                    key1_long_press, key1_short_press); 
+    single_key[1] = key_init_one(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
+                                    key2_long_press, key2_short_press); 
+    keys.key_num = GPIO_KEY_NUM; 
+    keys.key_timer_delay = 10;
+    keys.single_key = single_key; 
+    key_para_init(&keys);
 
-        if(0 == Mocou)
-        {
-            GAgent_Printf(GAGENT_CRITICAL, "MO : 0");
-            motor_control(0);
+    //motor init
+    motor_init();
+    motor_control(5);
 
-        }
-        else if(1 == Mocou)
-        {
-            GAgent_Printf(GAGENT_CRITICAL, "MO : 2");
-            motor_control(2);
+    //temperature and humidity init
+    dh11_init();
 
-        }
-        else if(2 == Mocou)
-        {
-            GAgent_Printf(GAGENT_CRITICAL, "MO : 4"); 
-            motor_control(4);
-            
-        } 
-        else if(3 == Mocou)
-        {
-            GAgent_Printf(GAGENT_CRITICAL, "MO : 5");
-            motor_control(5);
+    //Infrared init
+    ir_init(); 
 
-        }
-        else if(4 == Mocou)
-        {
-            GAgent_Printf(GAGENT_CRITICAL, "MO : 6");
-            motor_control(6);
+    GAgent_Printf(GAGENT_DEBUG, "gokit hardware init OK \r\n");
+}
 
-        }
-        else if(5 == Mocou)
-        {
-            GAgent_Printf(GAGENT_CRITICAL, "MO : 8");
-            motor_control(8);
-
-        }
-        else if(6 == Mocou)
-        {
-            GAgent_Printf(GAGENT_CRITICAL, "MO : 10");
-            motor_control(10);
-
-        }
-              
-        #endif
-
-        #ifdef RGBLED_ON
-        if(0 == rgbcou) 
-        {
-            rgb_control(0, 0, 250);
-            GAgent_Printf(GAGENT_CRITICAL, "RGB : B");
-        }
-        else if(1 == rgbcou) 
-        {
-            rgb_control(0, 250, 0);
-            GAgent_Printf(GAGENT_CRITICAL, "RGB : G");
-        }
-        else if(2 == rgbcou) 
-        {
-            rgb_control(250, 0, 0);
-            GAgent_Printf(GAGENT_CRITICAL, "RGB : R");
-        }
-        #endif
-
-        if(6 > Mocou)
-        {
-            Mocou++;
-        }
-        else
-        {
-            Mocou = 0;
-        }
-        
-        if(2 > rgbcou) 
-        {
-            rgbcou++; 
-        }
-        else
-        {
-            rgbcou = 0; 
-        } 
-    }
-
+void ICACHE_FLASH_ATTR gokit_software_init(void)
+{
+    memset((uint8_t *)&read_typedef, 0, sizeof(read_info_t));
+    memset((uint8_t *)&wirte_typedef, 0, sizeof(write_info_t));
+    memset((uint8_t *)&temphum_typedef, 0, sizeof(th_typedef_t)); 
+    memset((uint8_t *)&gokit_info, 0, sizeof(gokit_info_t)); 
+    
+    read_typedef.motor = 5; 
 }

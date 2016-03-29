@@ -4,38 +4,44 @@
 #include <stdio.h>
 #include <c_types.h>
 #include <gpio.h>
-#include <eagle_soc.h>
+#include "os_type.h"
+#include "osapi.h"
 
-#define KEY1_EANBLE
+#define PRESS_KEY1                              0x01
+#define PRESS_KEY2                              0x02
+#define PRESS_KEY3                              0x04
 
-/* Define your drive pin */
-#define GPIO_KEY1_PIN           0
-#define GPIO_KEY2_PIN           14
+#define NO_KEY                                  0x00
+#define KEY_DOWN                                0x10
+#define KEY_UP                                  0x20
+#define KEY_LIAN                                0x40
+#define KEY_LONG                                0x80
 
-/* Set GPIO Direction */
-#define GET_KEY1 	            GPIO_INPUT_GET(GPIO_ID_PIN(GPIO_KEY1_PIN))
-#define GET_KEY2 	            GPIO_INPUT_GET(GPIO_ID_PIN(GPIO_KEY2_PIN))
+typedef void (*gokit_key_function)(void);
 
+typedef struct
+{
+    uint8 gpio_id;
+    uint8 gpio_func;
+    uint32 gpio_name;
+    gokit_key_function short_press; 
+    gokit_key_function long_press; 
+}key_typedef_t; 
 
-#define PRESS_KEY1              0x01
-#define PRESS_KEY2              0x02
-#define PRESS_KEY3              0x04
-
-#define NO_KEY                  0x00
-#define KEY_DOWN                0x10
-#define KEY_UP    	            0x20
-#define KEY_LIAN                0x40
-#define KEY_LONG                0x80
-
-#define KEY_CLICK_DELAY         10
-
-#define KEY1_Long_Action        0x01         
-#define KEY2_Long_Action        0x02
+typedef struct
+{
+    uint8 key_num;
+    os_timer_t key_10ms;
+    uint8 key_timer_delay; 
+    key_typedef_t ** single_key; 
+}keys_typedef_t; 
 
 /* Function declaration */
-void key_gpio_init(void); 
-uint8_t key_value_read(void); 
-uint8_t key_state_read(void); 
+
+void gokit_key_handle(keys_typedef_t * keys); 
+key_typedef_t * key_init_one(uint8 gpio_id, uint32 gpio_name, uint8 gpio_func, gokit_key_function long_press, gokit_key_function short_press); 
+void key_para_init(keys_typedef_t * keys);
+void key_sensortest(void); 
 
 #endif /*_HAL_KEY_H*/
 

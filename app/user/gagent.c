@@ -19,7 +19,7 @@ GAgent_Init( pgcontext *pgc )
     GAgent_NewVar( pgc );
     GAgent_DevInit( *pgc );
     /* -1: no log */
-    GAgent_loglevelSet(/*-1*//*GAGENT_DUMP*//*GAGENT_INFO *//*GAGENT_WARNING*/GAGENT_ERROR); 
+    GAgent_loglevelSet(/*-1*//*GAGENT_DUMP*//*GAGENT_INFO *//*GAGENT_WARNING*/GAGENT_DEBUG); 
 
     GAgent_VarInit( pgc );
     GAgent_LocalInit( *pgc );

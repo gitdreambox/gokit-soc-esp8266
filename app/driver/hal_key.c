@@ -1,10 +1,10 @@
-/**
-********************************************************
+
+/*********************************************************
 *
 * @file      hal_key.c
 * @author    Gizwtis
-* @version   V2.3
-* @date      2015-07-06
+* @version   V3.0
+* @date      2016-03-09
 *
 * @brief     机智云 只为智能硬件而生
 *            Gizwits Smart Cloud  for Smart Products
@@ -13,9 +13,9 @@
 *
 *********************************************************/
 #include "driver/hal_key.h"
-#include "gokit.h"
+#include "gagent.h"
 
-uint32 KeyCountTime; 
+uint32 key_count_time; 
 
 /*******************************************************************************
 * Function Name  : key_value_read
@@ -23,21 +23,18 @@ uint32 KeyCountTime;
 * Input          : None
 * Output         : None
 * Return         : uint8_t KEY state
-* Attention		 : None
+* Attention      : None
 *******************************************************************************/
-uint8_t ICACHE_FLASH_ATTR
-key_value_read(void)
+static uint8_t key_value_read(keys_typedef_t * keys)
 {
     uint8_t ReadKey;
 
-    #ifdef KEY1_EANBLE
-    if(!GET_KEY1)
+    if(!GPIO_INPUT_GET(keys->single_key[0]->gpio_id)) 
     {
         ReadKey |= PRESS_KEY1;
     }
-    #endif
 
-    if(!GET_KEY2)
+    if(!GPIO_INPUT_GET(keys->single_key[1]->gpio_id)) 
     {
         ReadKey |= PRESS_KEY2;
     }
@@ -52,26 +49,25 @@ key_value_read(void)
 * Input          : None
 * Output         : None
 * Return         : uint8_t KEY value
-* Attention		 : None
+* Attention      : None
 *******************************************************************************/
-uint8_t ICACHE_FLASH_ATTR
-key_state_read(void)
+static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
 {
     static uint8_t Key_Check;
     static uint8_t Key_State;
     static uint16_t Key_LongCheck;
-    static uint8_t Key_Prev    = 0;     //保存上一次按键
+    static uint8_t Key_Prev = 0;     //保存上一次按键
 
     uint8_t Key_press;
     uint8_t Key_return = 0;
 
     //累加按键时间
-    KeyCountTime++;
+    key_count_time++;
         
-    //KeyCT 1MS+1  按键消抖10MS
-    if(KeyCountTime >= DEBOUNCE_TIMEOUT) 
+    //KeyCT 1MS+1  按键消抖20MS
+    if(key_count_time >= (20 / keys->key_timer_delay)) 
     {
-        KeyCountTime = 0; 
+        key_count_time = 0; 
         Key_Check = 1;
     }
     
@@ -80,7 +76,7 @@ key_state_read(void)
         Key_Check = 0;
         
         //获取当前按键触发值
-        Key_press = key_value_read(); 
+        Key_press = key_value_read(keys); 
         
         switch (Key_State)
         {
@@ -101,8 +97,9 @@ key_state_read(void)
                     Key_State = 2;
                     Key_return= Key_Prev | KEY_DOWN;
                 }
-                else 																					//按键抬起,是抖动,不响应按键
+                else
                 {
+                    //按键抬起,是抖动,不响应按键
                     Key_State = 0;
                 }
                 break;
@@ -144,30 +141,96 @@ key_state_read(void)
     return  NO_KEY;
 }
 
-/*******************************************************************************
-* Function Name  : key_gpio_init
-* Description    : Configure GPIO Pin
-* Input          : None
-* Output         : None
-* Return         : None
-* Attention		 : None
-*******************************************************************************/
-void ICACHE_FLASH_ATTR
-key_gpio_init(void)
+void gokit_key_handle(keys_typedef_t * keys)
 {
-    /* Migrate your driver code */
+    uint8_t key_value = 0;
 
-    //key1
-    #ifdef KEY1_EANBLE
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0);
-    GPIO_OUTPUT_SET(GPIO_ID_PIN(GPIO_KEY1_PIN), 1);
-    PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);
-    GPIO_DIS_OUTPUT(GPIO_ID_PIN(GPIO_KEY1_PIN));
-    #endif
+    key_value = key_state_read(keys); 
 
-    //key2
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);
-    GPIO_DIS_OUTPUT(GPIO_ID_PIN(GPIO_KEY2_PIN));
+    if(key_value & KEY_UP)
+    {
+        if(key_value & PRESS_KEY1)
+        {
+            if(keys->single_key[0]->short_press) 
+            {
+                keys->single_key[0]->short_press(); 
+            }
+        }
 
+        if(key_value & PRESS_KEY2)
+        {
+            if(keys->single_key[1]->short_press) 
+            {
+                keys->single_key[1]->short_press(); 
+            }
+        }
+    }
+
+    if(key_value & KEY_LONG)
+    {
+        if(key_value & PRESS_KEY1)
+        {
+            if(keys->single_key[0]->long_press) 
+            {
+                keys->single_key[0]->long_press(); 
+            }
+        }
+
+        if(key_value & PRESS_KEY2)
+        {
+            if(keys->single_key[1]->long_press) 
+            {
+                keys->single_key[1]->long_press(); 
+            }
+        }
+    }
+}
+
+key_typedef_t * ICACHE_FLASH_ATTR key_init_one(uint8 gpio_id, uint32 gpio_name, uint8 gpio_func, gokit_key_function long_press, gokit_key_function short_press)
+{
+    key_typedef_t * single_key = (key_typedef_t *)os_zalloc(sizeof(key_typedef_t));
+
+    single_key->gpio_id = gpio_id;
+    single_key->gpio_name = gpio_name;
+    single_key->gpio_func = gpio_func;
+    single_key->long_press = long_press;
+    single_key->short_press = short_press;
+
+    return single_key;
+}
+
+void key_para_init(keys_typedef_t * keys)
+{
+    uint8 tem_i; 
+    
+    //gokit timer start
+    os_timer_disarm(&keys->key_10ms); 
+    os_timer_setfn(&keys->key_10ms, (os_timer_func_t *)gokit_key_handle, keys); 
+    
+    for(tem_i = 0; tem_i < keys->key_num; tem_i++) 
+    {
+        //GPIO configured as a high level input mode
+        PIN_FUNC_SELECT(keys->single_key[tem_i]->gpio_name, keys->single_key[tem_i]->gpio_func); 
+        GPIO_OUTPUT_SET(GPIO_ID_PIN(keys->single_key[tem_i]->gpio_id), 1); 
+        PIN_PULLUP_EN(keys->single_key[tem_i]->gpio_name); 
+        GPIO_DIS_OUTPUT(GPIO_ID_PIN(keys->single_key[tem_i]->gpio_id)); 
+        
+        GAgent_Printf(GAGENT_DEBUG, "key_gpio%d_init \r\n", keys->key_num + 1); 
+    }
+    
+    os_timer_arm(&keys->key_10ms, keys->key_timer_delay, 1); 
+}
+
+void key_sensortest(void)
+{
+    /* Test LOG model */
+//  single_key[0] = key_init_one(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,
+//                                  key1_long_press, key1_short_press);
+//  single_key[1] = key_init_one(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
+//                                  key2_long_press, key2_short_press);
+//  keys.key_num = GPIO_KEY_NUM;
+//  keys.key_timer_delay = 10;
+//  keys.single_key = single_key;
+//  key_para_init(&keys);
 }
 

@@ -1,10 +1,10 @@
-/**
-********************************************************
+
+/*********************************************************
 *
-* @file      Hal_rgb_led.c
+* @file      hal_rgb_led.c
 * @author    Gizwtis
-* @version   V2.3
-* @date      2015-07-06
+* @version   V3.0
+* @date      2016-03-09
 *
 * @brief     机智云 只为智能硬件而生
 *            Gizwits Smart Cloud  for Smart Products
@@ -12,7 +12,9 @@
 *            www.gizwits.com
 *
 *********************************************************/
+
 #include "driver/hal_rgb_led.h"
+#include "gagent.h"
 
 static void rgb_delay(unsigned int  us)
 {
@@ -130,6 +132,27 @@ void rgb_gpio_init(void)
 
     gpio_output_set(0, 0, GPIO_ID_PIN(GPIO_RGB_SCL) | GPIO_ID_PIN(GPIO_RGB_SDA), 0); //| GPIO_ID_PIN(GPIO_RGB_POW)
 
+    GAgent_Printf(GAGENT_DEBUG, "rgb_gpio_init \r\n"); 
 }
 
+void rgb_sensortest(uint8_t rgbcou)
+{
+    /* Test LOG model */
+
+    if (0 == rgbcou)
+    {
+        rgb_control(0, 0, 250);
+        GAgent_Printf(GAGENT_CRITICAL, "RGB : B");
+    }
+    else if (1 == rgbcou)
+    {
+        rgb_control(0, 250, 0);
+        GAgent_Printf(GAGENT_CRITICAL, "RGB : G");
+    }
+    else if (2 == rgbcou)
+    {
+        rgb_control(250, 0, 0);
+        GAgent_Printf(GAGENT_CRITICAL, "RGB : R");
+    }
+}
 

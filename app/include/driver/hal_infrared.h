@@ -14,6 +14,7 @@
 /* Function declaration */
 void ir_init(void);
 bool ir_update_status(void);
+void ir_sensortest(void);
 
 #endif /*_HAL_INFRARED_H*/
 

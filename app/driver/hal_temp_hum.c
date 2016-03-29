@@ -1,10 +1,10 @@
-/**
-********************************************************
+
+/*********************************************************
 *
-* @file      Hal_temp_hum.c
+* @file      hal_temp_hum.c
 * @author    Gizwtis
-* @version   V2.3
-* @date      2015-07-06
+* @version   V3.0
+* @date      2016-03-09
 *
 * @brief     机智云 只为智能硬件而生
 *            Gizwits Smart Cloud  for Smart Products
@@ -12,8 +12,12 @@
 *            www.gizwits.com
 *
 *********************************************************/
+
 #include "driver/hal_temp_hum.h"
 #include "osapi.h"
+#include "gagent.h"
+
+th_typedef_t temphum_typedef; 
 
 static void temp_hum_delay(unsigned int us)
 {
@@ -95,7 +99,7 @@ static u8 hdt11_read_byte(void)
     return dat;
 }
 
-u8 hdt11_read_data(u8 * temperature, u8 * humidity)
+u8 dht11_read_data(u8 * temperature, u8 * humidity)
 {
     u8 buf[5];
     u8 i;
@@ -124,5 +128,19 @@ u8 dh11_init(void)
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
 
     hdt11_rst(); 
+    
+    GAgent_Printf(GAGENT_DEBUG, "dh11_init \r\n"); 
+    
     return hdt11_check(); 
+}
+
+void dh11_sensortest(void)
+{
+    /* Test LOG model */
+
+    uint8_t curTem = 0, curHum = 0; 
+    
+    dht11_read_data(&curTem, &curHum); 
+    
+    GAgent_Printf(GAGENT_DEBUG, "Temperature : %d , Humidity : %d", curTem, curHum); 
 }

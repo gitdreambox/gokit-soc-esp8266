@@ -111,6 +111,8 @@ void ICACHE_FLASH_ATTR user_init(void)
     wifi_set_sleep_type(NONE_SLEEP_T);//set none sleep mode
     espconn_tcp_set_max_con(10);
     LOCAL os_timer_t test_timer;
+    LOCAL os_timer_t gokit_timer; 
+    
     uart_init_3(9600,115200/*74880*/);
     UART_SetPrintPort(1);
 
@@ -140,13 +142,24 @@ void ICACHE_FLASH_ATTR user_init(void)
     }
     
     system_os_task(dataHandle_task, 1, TaskQueue, TaskQueueLen);
+    
     GAgent_Init( &pgContextData );
     GAgent_dumpInfo( pgContextData );
+    
+    //gokit hardware init
+    gokit_hardware_init(); 
+    
+    //gokit software init
+    gokit_software_init(); 
+
     //start timer
     os_timer_disarm(&test_timer);
     os_timer_setfn(&test_timer, (os_timer_func_t *)GAgent_Tick, pgContextData);
-    os_timer_arm(&test_timer, 1000, 1);
-    
-    gokit_hardware_init(); 
+    os_timer_arm(&test_timer, 1000, 1); 
+
+    //gokit timer start
+    os_timer_disarm(&gokit_timer);
+    os_timer_setfn(&gokit_timer, (os_timer_func_t *)gokit_timer_func, NULL);
+    os_timer_arm(&gokit_timer, SOC_TIME_OUT, 1); 
 }
 
