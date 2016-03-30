@@ -29,7 +29,7 @@ static void temp_hum_delay(unsigned int us)
 //Reset DHT11
 static void hdt11_rst(void)
 {
-    DHT11_IO_OUT; 											    //SET OUTPUT
+    DHT11_IO_OUT;                                               //SET OUTPUT
     DHT11_OUT_LOW;                                              //GPIOA.0=0
     temp_hum_delay(18*1000);                                    //Pull down Least 18ms
     DHT11_OUT_HIGH;                                             //GPIOA.0=1
@@ -38,8 +38,8 @@ static void hdt11_rst(void)
 static u8 hdt11_check(void)
 {
     u8 retry=0;
-    DHT11_IO_IN;												//SET INPUT
-    while (DHT11_IN&&retry<100)				                    //DHT11 Pull down 40~80us
+    DHT11_IO_IN;                                                //SET INPUT
+    while (DHT11_IN&&retry<100)                                 //DHT11 Pull down 40~80us
     {
         retry++;
         temp_hum_delay(1);
@@ -50,14 +50,14 @@ static u8 hdt11_check(void)
     else
         retry=0;
 
-    while (!DHT11_IN&&retry<100)				                //DHT11 Pull up 40~80us
+    while (!DHT11_IN&&retry<100)                                //DHT11 Pull up 40~80us
     {
         retry++;
         temp_hum_delay(1);
     }
 
     if(retry>=100)
-        return 1;												//chack error
+        return 1;                                               //chack error
 
     return 0;
 }
@@ -65,20 +65,20 @@ static u8 hdt11_check(void)
 static u8 hdt11_read_bit(void)
 {
     u8 retry=0;
-    while(DHT11_IN&&retry<100)					                //wait become Low level
+    while(DHT11_IN&&retry<100)                                  //wait become Low level
     {
         retry++;
         temp_hum_delay(1);
     }
 
     retry=0;
-    while(!DHT11_IN&&retry<100)				                    //wait become High level
+    while(!DHT11_IN&&retry<100)                                 //wait become High level
     {
         retry++;
         temp_hum_delay(1);
     }
 
-    temp_hum_delay(40);//wait 40us
+    temp_hum_delay(40);                                         //wait 40us
 
     if(DHT11_IN)
         return 1;
