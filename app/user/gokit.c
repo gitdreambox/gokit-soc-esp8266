@@ -29,7 +29,6 @@ extern pgcontext pgContextData;
 write_info_t wirte_typedef;
 read_info_t read_typedef;
 
-th_typedef_t temphum_typedef;
 LOCAL key_typedef_t * single_key[GPIO_KEY_NUM]; 
 LOCAL keys_typedef_t keys; 
 
@@ -55,6 +54,8 @@ LOCAL uint8_t ICACHE_FLASH_ATTR gokit_th_handle(void)
 {
     static uint16_t th_ctime = 0;
     static uint16_t th_meanstime = 0; 
+    static uint8_t pre_tem_means_val = 0; 
+    static uint8_t pre_hum_means_val = 0; 
     uint8_t curTem = 0, curHum = 0; 
     uint16_t tem_means = 0, hum_means = 0;
     
@@ -62,59 +63,39 @@ LOCAL uint8_t ICACHE_FLASH_ATTR gokit_th_handle(void)
     {
         th_ctime = 0;
  
-        dht11_read_data(&curTem, &curHum); 
+        dh11_read(&curTem, &curHum); 
         
         //Being the first time and the initiative to report
-        if((temphum_typedef.pre_tem_means_val == NULL) || (temphum_typedef.pre_hum_means_val == NULL)) 
+        if((pre_tem_means_val == 0) || (pre_hum_means_val == 0)) 
         {
-            temphum_typedef.pre_tem_means_val = curTem; 
-            temphum_typedef.pre_hum_means_val = curHum; 
+            pre_tem_means_val = curTem; 
+            pre_hum_means_val = curHum; 
 
-            read_typedef.temperature = temphum_typedef.pre_tem_means_val + TEM_OFFSET_VAL; 
-            read_typedef.humidity = temphum_typedef.pre_hum_means_val;
+            read_typedef.temperature = pre_tem_means_val + TEM_OFFSET_VAL; 
+            read_typedef.humidity = pre_hum_means_val;
             
             return (1); 
         }
         
-        //Cycle store ten times stronghold
-        if(10 > temphum_typedef.th_num) 
-        {
-            temphum_typedef.th_bufs[temphum_typedef.th_num][0] = curTem; 
-            temphum_typedef.th_bufs[temphum_typedef.th_num][1] = curHum; 
-            
-            temphum_typedef.th_num ++;
-        }
-        else
-        {
-            temphum_typedef.th_num = 0;
-        }
+
     }
     
     //Periodically calculate the average temperature and humidity
     if(TH_MEANS_TIMEOUT < th_meanstime) 
     {
-        uint8_t cur_i = 0; 
-        
         th_meanstime = 0; 
-
-        for(cur_i = 0; cur_i < 10; cur_i++) 
-        {
-            tem_means += temphum_typedef.th_bufs[cur_i][0]; 
-            hum_means += temphum_typedef.th_bufs[cur_i][1]; 
-        }
         
-        tem_means = tem_means / 10;
-        hum_means = hum_means / 10;
+        dh11_read(&curTem, &curHum); 
         
         //Before and after the two values, it is determined whether or not reported
-        if((temphum_typedef.pre_tem_means_val != tem_means) || (temphum_typedef.pre_hum_means_val != hum_means)) 
+        if((pre_tem_means_val != curTem) || (pre_hum_means_val != curHum)) 
         {
-            temphum_typedef.pre_tem_means_val = (uint8_t)tem_means; 
-            temphum_typedef.pre_hum_means_val = (uint8_t)hum_means; 
+            pre_tem_means_val = (uint8_t)curTem; 
+            pre_hum_means_val = (uint8_t)curHum; 
 
             //Initiative to report data
-            read_typedef.temperature = temphum_typedef.pre_tem_means_val + TEM_OFFSET_VAL; 
-            read_typedef.humidity = temphum_typedef.pre_hum_means_val; 
+            read_typedef.temperature = pre_tem_means_val + TEM_OFFSET_VAL; 
+            read_typedef.humidity = pre_hum_means_val; 
             
             GAgent_Printf(GAGENT_DEBUG, "Temperature : %d , Humidity : %d", read_typedef.temperature, read_typedef.humidity); 
             
@@ -451,7 +432,6 @@ void ICACHE_FLASH_ATTR gokit_software_init(void)
 {
     memset((uint8_t *)&read_typedef, 0, sizeof(read_info_t));
     memset((uint8_t *)&wirte_typedef, 0, sizeof(write_info_t));
-    memset((uint8_t *)&temphum_typedef, 0, sizeof(th_typedef_t)); 
     
     read_typedef.motor = MOTOR_DF_VAL; 
     

@@ -17,6 +17,8 @@
 #include "osapi.h"
 #include "gagent.h"
 
+th_typedef_t temphum_typedef;
+
 static void temp_hum_delay(unsigned int us)
 {
     /* Define your delay function */
@@ -97,7 +99,7 @@ static u8 hdt11_read_byte(void)
     return dat;
 }
 
-u8 dht11_read_data(u8 * temperature, u8 * humidity)
+static u8 dht11_read_data(u8 * temperature, u8 * humidity)
 {
     u8 buf[5];
     u8 i;
@@ -120,12 +122,79 @@ u8 dht11_read_data(u8 * temperature, u8 * humidity)
     return 0;
 }
 
+uint8_t dh11_read(uint8_t * temperature, uint8_t * humidity)
+{
+    uint8_t curTem = 0, curHum = 0;
+    uint16_t tem_means = 0, hum_means = 0;
+    uint8_t cur_i = 0; 
+
+    dht11_read_data(&curTem, &curHum);
+
+    //Cycle store ten times stronghold
+    if(MEAN_NUM > temphum_typedef.th_num) 
+    {
+        temphum_typedef.th_bufs[temphum_typedef.th_num][0] = curTem;
+        temphum_typedef.th_bufs[temphum_typedef.th_num][1] = curHum;
+
+        temphum_typedef.th_num++;
+    }
+    else
+    {
+        temphum_typedef.th_num = 0;
+        
+        temphum_typedef.th_bufs[temphum_typedef.th_num][0] = curTem;
+        temphum_typedef.th_bufs[temphum_typedef.th_num][1] = curHum; 
+        
+        temphum_typedef.th_num++; 
+    }
+
+    if(MEAN_NUM <= temphum_typedef.th_num) 
+    {
+        temphum_typedef.th_amount = MEAN_NUM;
+    }
+
+    if(0 == temphum_typedef.th_amount) 
+    {
+        //Calculate Before ten the mean
+        for(cur_i = 0; cur_i < temphum_typedef.th_num; cur_i++)
+        {
+            tem_means += temphum_typedef.th_bufs[cur_i][0];
+            hum_means += temphum_typedef.th_bufs[cur_i][1];
+        }
+
+        tem_means = tem_means / temphum_typedef.th_num;
+        hum_means = hum_means / temphum_typedef.th_num; 
+        
+        *temperature = tem_means;
+        *humidity = hum_means;
+    }
+    else if(MEAN_NUM == temphum_typedef.th_amount) 
+    {
+        //Calculate After ten times the mean
+        for(cur_i = 0; cur_i < temphum_typedef.th_amount; cur_i++) 
+        {
+            tem_means += temphum_typedef.th_bufs[cur_i][0];
+            hum_means += temphum_typedef.th_bufs[cur_i][1];
+        }
+
+        tem_means = tem_means / temphum_typedef.th_amount; 
+        hum_means = hum_means / temphum_typedef.th_amount; 
+        
+        *temperature = (uint8_t)tem_means; 
+        *humidity = (uint8_t)hum_means; 
+    }
+
+    return (0);
+}
+
 u8 dh11_init(void)
 {
     /* Migrate your driver code */
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
 
     hdt11_rst(); 
+    
+    memset((uint8_t *)&temphum_typedef, 0, sizeof(th_typedef_t)); 
     
     GAgent_Printf(GAGENT_DEBUG, "dh11_init \r\n"); 
     
