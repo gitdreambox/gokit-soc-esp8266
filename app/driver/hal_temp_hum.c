@@ -1,4 +1,4 @@
-
+ï»¿
 /*********************************************************
 *
 * @file      hal_temp_hum.c
@@ -6,9 +6,9 @@
 * @version   V3.0
 * @date      2016-03-09
 *
-* @brief     »úÖÇÔÆ Ö»ÎªÖÇÄÜÓ²¼ş¶øÉú
+* @brief     æœºæ™ºäº‘ åªä¸ºæ™ºèƒ½ç¡¬ä»¶è€Œç”Ÿ
 *            Gizwits Smart Cloud  for Smart Products
-*            Á´½Ó|ÔöÖµ|¿ª·Å|ÖĞÁ¢|°²È«|×ÔÓĞ|×ÔÓÉ|ÉúÌ¬
+*            é“¾æ¥|å¢å€¼|å¼€æ”¾|ä¸­ç«‹|å®‰å…¨|è‡ªæœ‰|è‡ªç”±|ç”Ÿæ€
 *            www.gizwits.com
 *
 *********************************************************/
@@ -16,8 +16,6 @@
 #include "driver/hal_temp_hum.h"
 #include "osapi.h"
 #include "gagent.h"
-
-th_typedef_t temphum_typedef; 
 
 static void temp_hum_delay(unsigned int us)
 {

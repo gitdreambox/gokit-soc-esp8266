@@ -1,4 +1,4 @@
-
+﻿
 /*********************************************************
 *
 * @file      gokit.c
@@ -6,9 +6,9 @@
 * @version   V3.0
 * @date      2016-03-09
 *
-* @brief     »úÖÇÔÆ Ö»ÎªÖÇÄÜÓ²¼þ¶øÉú
+* @brief     机智云 只为智能硬件而生
 *            Gizwits Smart Cloud  for Smart Products
-*            Á´½Ó|ÔöÖµ|¿ª·Å|ÖÐÁ¢|°²È«|×ÔÓÐ|×ÔÓÉ|ÉúÌ¬
+*            链接|增值|开放|中立|安全|自有|自由|生态
 *            www.gizwits.com
 *
 *********************************************************/
@@ -22,19 +22,17 @@
 #include "driver/hal_rgb_led.h"
 #include "driver/hal_temp_hum.h"
 
+/*Gagent global Variable*/
 extern pgcontext pgContextData;
 
-/*Global Variable*/
+/*Gokit global Variable*/
 write_info_t wirte_typedef;
 read_info_t read_typedef;
-gokit_info_t gokit_info;
 
-extern th_typedef_t temphum_typedef;
+th_typedef_t temphum_typedef;
 LOCAL key_typedef_t * single_key[GPIO_KEY_NUM]; 
 LOCAL keys_typedef_t keys; 
 
-uint32 gokit_tick_count = 0;
-uint8_t gokit_report_flag = 0;
 uint8_t gokit_led_status = 0;
 uint8_t gokit_config_flag = 0; 
 
@@ -53,26 +51,7 @@ LOCAL uint16_t ICACHE_FLASH_ATTR gokit_ntohs(uint16_t value)
     return tmp_value;
 }
 
-uint8_t ble2ble_get_flag(uint8_t bit)
-{
-    return ((gokit_info.flag >> bit) & 0x01); 
-}
-
-uint16_t ble2ble_set_flag(uint8_t bit)
-{
-    gokit_info.flag |= (0x01 << bit); 
-    
-    return (gokit_info.flag); 
-}
-
-uint16_t ble2ble_clear_flag(uint8_t bit)
-{
-    gokit_info.flag &= ~(0x01 << bit); 
-    
-    return (gokit_info.flag); 
-}
-
-LOCAL void ICACHE_FLASH_ATTR gokit_th_handle(void)
+LOCAL uint8_t ICACHE_FLASH_ATTR gokit_th_handle(void)
 {
     static uint16_t th_ctime = 0;
     static uint16_t th_meanstime = 0; 
@@ -85,17 +64,16 @@ LOCAL void ICACHE_FLASH_ATTR gokit_th_handle(void)
  
         dht11_read_data(&curTem, &curHum); 
         
-        //Take time every 200ms temperature and humidity data values
+        //Being the first time and the initiative to report
         if((temphum_typedef.pre_tem_means_val == NULL) || (temphum_typedef.pre_hum_means_val == NULL)) 
         {
             temphum_typedef.pre_tem_means_val = curTem; 
             temphum_typedef.pre_hum_means_val = curHum; 
 
-            //Being the first time and the initiative to report
             read_typedef.temperature = temphum_typedef.pre_tem_means_val + TEM_OFFSET_VAL; 
             read_typedef.humidity = temphum_typedef.pre_hum_means_val;
             
-            gokit_report_flag = 1; 
+            return (1); 
         }
         
         //Cycle store ten times stronghold
@@ -140,16 +118,17 @@ LOCAL void ICACHE_FLASH_ATTR gokit_th_handle(void)
             
             GAgent_Printf(GAGENT_DEBUG, "Temperature : %d , Humidity : %d", read_typedef.temperature, read_typedef.humidity); 
             
-            gokit_report_flag = 1; 
+            return (1); 
         }
     }
     
     th_meanstime++;
     th_ctime++; 
     
+    return (0); 
 }
 
-LOCAL void ICACHE_FLASH_ATTR gokit_ir_handle(void)
+LOCAL uint8_t ICACHE_FLASH_ATTR gokit_ir_handle(void)
 {
     uint8_t ir_value = 0; 
     
@@ -159,8 +138,30 @@ LOCAL void ICACHE_FLASH_ATTR gokit_ir_handle(void)
     {
         GAgent_Printf(GAGENT_DEBUG, "@@@@ ir status %d\n", ir_value);
         read_typedef.infrared = ir_value;
-        gokit_report_flag = 1;
+        
+        return (1); 
     }
+    
+    return (0);
+}
+
+LOCAL uint8_t ICACHE_FLASH_ATTR gokit_report_handle(void)
+{
+    static uint32 rep_ctime = 0;
+
+    //600s Regularly report
+    if(TIM_REP_TIMOUT < rep_ctime) 
+    {
+        rep_ctime = 0;
+        
+        GAgent_Printf(GAGENT_DEBUG, "@@@@ gokit_report\n"); 
+
+        return (1);
+    }
+    
+    rep_ctime++;
+    
+    return (0);
 }
 
 void ICACHE_FLASH_ATTR gokit_read_data(void)
@@ -339,8 +340,8 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                 #endif
             }
             
-            //ÃƒÂ¿Ã‰Ã¨Ã–ÃƒÃ’Â»Â´ÃŽÂ´Â«Â¸ÃÃ†Ã·Ã”Ã²Ã–Ã˜ÃÃ‚Ã‰ÃÂ±Â¨Ã’Â»Â´ÃŽÃ—Ã®ÃÃ‚Ã—Â´ÃŒÂ¬
-            gokit_report_flag = 1; 
+            //The initiative to report after every write
+            gokit_report_data(); 
             
             break;
         }
@@ -355,32 +356,33 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
             break;
     }
 
-    return;
-}
-
-void ICACHE_FLASH_ATTR gokit_tick(void)
-{
-
-    GAgent_Printf(GAGENT_DEBUG, "@@@@ gokit_task \n");
-
-    if(0 == (gokit_tick_count % 600)) //600sï¼Œä¼ æ„Ÿå™¨çŠ¶æ€ä¸å˜ï¼Œä¸ŠæŠ¥æ•°æ®ã€‚
-    {
-        gokit_report_flag = 1;
-    }
-
-    if(1 == gokit_report_flag)
-    {
-        gokit_report_data();
-        gokit_report_flag = 0;
-    }
-
-    gokit_tick_count++;
+    return (0);
 }
 
 void ICACHE_FLASH_ATTR gokit_timer_func(void)
 {
-    gokit_th_handle();
-    gokit_ir_handle();
+    uint8_t ret = 0;
+    
+    //Temperature and humidity sensors reported conditional
+    ret = gokit_th_handle();
+    if(1 == ret)
+    {
+        gokit_report_data(); 
+    }
+    
+    //Infrared sensors reported conditional
+    ret = gokit_ir_handle(); 
+    if(1 == ret)
+    {
+        gokit_report_data(); 
+    }
+    
+    //Regularly report conditional
+    ret = gokit_report_handle(); 
+    if(1 == ret)
+    {
+        gokit_report_data();
+    }
 }
 
 LOCAL void ICACHE_FLASH_ATTR key2_short_press(void)
@@ -428,13 +430,13 @@ void ICACHE_FLASH_ATTR gokit_hardware_init(void)
     single_key[1] = key_init_one(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
                                     key2_long_press, key2_short_press); 
     keys.key_num = GPIO_KEY_NUM; 
-    keys.key_timer_delay = 10;
+    keys.key_timer_ms = 10;
     keys.single_key = single_key; 
     key_para_init(&keys);
 
     //motor init
     motor_init();
-    motor_control(5);
+    motor_control(MOTOR_DF_VAL); 
 
     //temperature and humidity init
     dh11_init();
@@ -450,7 +452,8 @@ void ICACHE_FLASH_ATTR gokit_software_init(void)
     memset((uint8_t *)&read_typedef, 0, sizeof(read_info_t));
     memset((uint8_t *)&wirte_typedef, 0, sizeof(write_info_t));
     memset((uint8_t *)&temphum_typedef, 0, sizeof(th_typedef_t)); 
-    memset((uint8_t *)&gokit_info, 0, sizeof(gokit_info_t)); 
     
-    read_typedef.motor = 5; 
+    read_typedef.motor = MOTOR_DF_VAL; 
+    
+    GAgent_Printf(GAGENT_DEBUG, "gokit software init OK \r\n"); 
 }

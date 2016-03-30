@@ -152,7 +152,7 @@ void ICACHE_FLASH_ATTR user_init(void)
     //gokit software init
     gokit_software_init(); 
 
-    //start timer
+    //GAgent timer start
     os_timer_disarm(&test_timer);
     os_timer_setfn(&test_timer, (os_timer_func_t *)GAgent_Tick, pgContextData);
     os_timer_arm(&test_timer, 1000, 1); 

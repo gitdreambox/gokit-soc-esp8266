@@ -1,4 +1,4 @@
-
+ï»¿
 /*********************************************************
 *
 * @file      hal_key.c
@@ -6,9 +6,9 @@
 * @version   V3.0
 * @date      2016-03-09
 *
-* @brief     »úÖÇÔÆ Ö»ÎªÖÇÄÜÓ²¼þ¶øÉú
+* @brief     æœºæ™ºäº‘ åªä¸ºæ™ºèƒ½ç¡¬ä»¶è€Œç”Ÿ
 *            Gizwits Smart Cloud  for Smart Products
-*            Á´½Ó|ÔöÖµ|¿ª·Å|ÖÐÁ¢|°²È«|×ÔÓÐ|×ÔÓÉ|ÉúÌ¬
+*            é“¾æŽ¥|å¢žå€¼|å¼€æ”¾|ä¸­ç«‹|å®‰å…¨|è‡ªæœ‰|è‡ªç”±|ç”Ÿæ€
 *            www.gizwits.com
 *
 *********************************************************/
@@ -56,16 +56,16 @@ static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
     static uint8_t Key_Check;
     static uint8_t Key_State;
     static uint16_t Key_LongCheck;
-    static uint8_t Key_Prev = 0;     //±£´æÉÏÒ»´Î°´¼ü
+    static uint8_t Key_Prev = 0;     //ä¿å­˜ä¸Šä¸€æ¬¡æŒ‰é”®
 
     uint8_t Key_press;
     uint8_t Key_return = 0;
 
-    //ÀÛ¼Ó°´¼üÊ±¼ä
+    //ç´¯åŠ æŒ‰é”®æ—¶é—´
     key_count_time++;
         
-    //KeyCT 1MS+1  °´¼üÏû¶¶20MS
-    if(key_count_time >= (20 / keys->key_timer_delay)) 
+    //KeyCT 1MS+1  æŒ‰é”®æ¶ˆæŠ–20MS
+    if(key_count_time >= (20 / keys->key_timer_ms)) 
     {
         key_count_time = 0; 
         Key_Check = 1;
@@ -75,12 +75,12 @@ static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
     {
         Key_Check = 0;
         
-        //»ñÈ¡µ±Ç°°´¼ü´¥·¢Öµ
+        //èŽ·å–å½“å‰æŒ‰é”®è§¦å‘å€¼
         Key_press = key_value_read(keys); 
         
         switch (Key_State)
         {
-            //"Ê×´Î²¶×½°´¼ü"×´Ì¬
+            //"é¦–æ¬¡æ•æ‰æŒ‰é”®"çŠ¶æ€
             case 0:
                 if(Key_press != 0)
                 {
@@ -90,7 +90,7 @@ static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
     
                 break;
                 
-                //"²¶×½µ½ÓÐÐ§°´¼ü"×´Ì¬
+                //"æ•æ‰åˆ°æœ‰æ•ˆæŒ‰é”®"çŠ¶æ€
             case 1:
                 if(Key_press == Key_Prev)
                 {
@@ -99,12 +99,12 @@ static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
                 }
                 else
                 {
-                    //°´¼üÌ§Æð,ÊÇ¶¶¶¯,²»ÏìÓ¦°´¼ü
+                    //æŒ‰é”®æŠ¬èµ·,æ˜¯æŠ–åŠ¨,ä¸å“åº”æŒ‰é”®
                     Key_State = 0;
                 }
                 break;
                 
-                //"²¶×½³¤°´¼ü"×´Ì¬
+                //"æ•æ‰é•¿æŒ‰é”®"çŠ¶æ€
             case 2:
     
                 if(Key_press != Key_Prev)
@@ -118,7 +118,7 @@ static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
                 if(Key_press == Key_Prev)
                 {
                     Key_LongCheck++;
-                    if(Key_LongCheck >= 100)    //³¤°´2S
+                    if(Key_LongCheck >= 100)    //é•¿æŒ‰2S
                     {
                         Key_LongCheck = 0;
                         Key_State = 3;
@@ -128,7 +128,7 @@ static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
                 }
                 break;
                 
-                //"»¹Ô­³õÊ¼"×´Ì¬    
+                //"è¿˜åŽŸåˆå§‹"çŠ¶æ€    
             case 3:
                 if(Key_press != Key_Prev)
                 {
@@ -147,10 +147,12 @@ void gokit_key_handle(keys_typedef_t * keys)
 
     key_value = key_state_read(keys); 
 
+    //Callback judgment
     if(key_value & KEY_UP)
     {
         if(key_value & PRESS_KEY1)
         {
+            //key1 callback function of short press
             if(keys->single_key[0]->short_press) 
             {
                 keys->single_key[0]->short_press(); 
@@ -159,6 +161,7 @@ void gokit_key_handle(keys_typedef_t * keys)
 
         if(key_value & PRESS_KEY2)
         {
+            //key2 callback function of short press
             if(keys->single_key[1]->short_press) 
             {
                 keys->single_key[1]->short_press(); 
@@ -170,6 +173,7 @@ void gokit_key_handle(keys_typedef_t * keys)
     {
         if(key_value & PRESS_KEY1)
         {
+            //key1 callback function of long press
             if(keys->single_key[0]->long_press) 
             {
                 keys->single_key[0]->long_press(); 
@@ -178,6 +182,7 @@ void gokit_key_handle(keys_typedef_t * keys)
 
         if(key_value & PRESS_KEY2)
         {
+            //key2 callback function of long press
             if(keys->single_key[1]->long_press) 
             {
                 keys->single_key[1]->long_press(); 
@@ -203,13 +208,13 @@ void key_para_init(keys_typedef_t * keys)
 {
     uint8 tem_i; 
     
-    //gokit timer start
+    //init key timer 
     os_timer_disarm(&keys->key_10ms); 
     os_timer_setfn(&keys->key_10ms, (os_timer_func_t *)gokit_key_handle, keys); 
     
+    //GPIO configured as a high level input mode
     for(tem_i = 0; tem_i < keys->key_num; tem_i++) 
     {
-        //GPIO configured as a high level input mode
         PIN_FUNC_SELECT(keys->single_key[tem_i]->gpio_name, keys->single_key[tem_i]->gpio_func); 
         GPIO_OUTPUT_SET(GPIO_ID_PIN(keys->single_key[tem_i]->gpio_id), 1); 
         PIN_PULLUP_EN(keys->single_key[tem_i]->gpio_name); 
@@ -218,7 +223,8 @@ void key_para_init(keys_typedef_t * keys)
         GAgent_Printf(GAGENT_DEBUG, "key_gpio%d_init \r\n", keys->key_num + 1); 
     }
     
-    os_timer_arm(&keys->key_10ms, keys->key_timer_delay, 1); 
+    //key timer start
+    os_timer_arm(&keys->key_10ms, keys->key_timer_ms, 1); 
 }
 
 void key_sensortest(void)
@@ -229,7 +235,7 @@ void key_sensortest(void)
 //  single_key[1] = key_init_one(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
 //                                  key2_long_press, key2_short_press);
 //  keys.key_num = GPIO_KEY_NUM;
-//  keys.key_timer_delay = 10;
+//  keys.key_timer_ms = 10;
 //  keys.single_key = single_key;
 //  key_para_init(&keys);
 }

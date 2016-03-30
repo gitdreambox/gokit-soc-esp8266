@@ -1,4 +1,4 @@
-#ifndef _HAL_KEY_H_
+﻿#ifndef _HAL_KEY_H_
 #define _HAL_KEY_H_
 
 #include <stdio.h>
@@ -32,7 +32,7 @@ typedef struct
 {
     uint8 key_num;
     os_timer_t key_10ms;
-    uint8 key_timer_delay; 
+    uint8 key_timer_ms; 
     key_typedef_t ** single_key; 
 }keys_typedef_t; 
 

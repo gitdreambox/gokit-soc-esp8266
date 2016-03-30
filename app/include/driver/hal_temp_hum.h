@@ -1,4 +1,4 @@
-#ifndef _HAL_HEMP_HUM_H
+Ôªø#ifndef _HAL_HEMP_HUM_H
 #define _HAL_HEMP_HUM_H
 
 #include <stdio.h>
@@ -10,7 +10,7 @@
 #define DHT11_GPIO_PIN      5
 
 /* Set GPIO Direction */
-#define DHT11_IO_IN         GPIO_DIS_OUTPUT(GPIO_ID_PIN(DHT11_GPIO_PIN))// gpio_output_set(0, 0, 0, GPIO_ID_PIN(DHT11_GPIO_PIN))≤ªø…”√
+#define DHT11_IO_IN         GPIO_DIS_OUTPUT(GPIO_ID_PIN(DHT11_GPIO_PIN))// gpio_output_set(0, 0, 0, GPIO_ID_PIN(DHT11_GPIO_PIN))‰∏çÂèØÁî®
 
 #define DHT11_IO_OUT        gpio_output_set(0, 0, GPIO_ID_PIN(DHT11_GPIO_PIN), 0)
 
@@ -19,9 +19,6 @@
 
 #define	DHT11_IN            GPIO_INPUT_GET(GPIO_ID_PIN(DHT11_GPIO_PIN))
 
-/*****************************************************
-* P0 command √¸¡Ó¬Î
-******************************************************/
 typedef struct
 {
     uint8_t pre_tem_means_val;

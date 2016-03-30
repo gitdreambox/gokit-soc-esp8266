@@ -1,4 +1,4 @@
-#ifndef _HAL_MOTOR_H
+ï»¿#ifndef _HAL_MOTOR_H
 #define _HAL_MOTOR_H
 
 #include <stdio.h>
@@ -25,7 +25,7 @@
 #define PWM_1_OUT_IO_FUNC   FUNC_GPIO3
 
 #define MOTOR_PERIOD        1000
-#define MOTOR_MAX_DUTY      (MOTOR_PERIOD * 1000 / 45)  //1KHz(1000 us) PWM£¬ duty ·¶Î§ÊÇ£º 0 ~ 22222
+#define MOTOR_MAX_DUTY      (MOTOR_PERIOD * 1000 / 45)  //1KHz(1000 us) PWMï¼Œ duty èŒƒå›´æ˜¯ï¼š 0 ~ 22222
 #define MOTOR_MIN_DUTY      0
 #define MOTOR_MAX_STA       10
 #define MOTOR_MIN_STA       0

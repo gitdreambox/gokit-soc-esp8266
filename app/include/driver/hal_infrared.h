@@ -1,4 +1,4 @@
-#ifndef _HAL_INFRARED_H
+﻿#ifndef _HAL_INFRARED_H
 #define _HAL_INFRARED_H
 #include <stdio.h>
 #include <c_types.h>

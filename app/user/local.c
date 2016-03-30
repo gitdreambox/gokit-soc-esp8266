@@ -1120,7 +1120,6 @@ void ICACHE_FLASH_ATTR
 GAgent_LocalTick( pgcontext pgc,uint32 dTime_s )
 {
 
-    gokit_tick();
     return;
 
     //1秒定时器
