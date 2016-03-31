@@ -28,7 +28,7 @@ struct pwm_param motor_param;
  *                uint8 channel : MOTOR_A/MOTOR_B
  * Returns      : NONE
 *******************************************************************************/
-void ICACHE_FLASH_ATTR Motor_PWM_Control(uint8_t m0, uint8_t m1)
+void ICACHE_FLASH_ATTR motor_pwm_control(uint8_t m0, uint8_t m1)
 {
     uint32 temp_m0 = 0; 
     uint32 temp_m1 = 0; 
@@ -61,15 +61,15 @@ void ICACHE_FLASH_ATTR motor_control(MOTOR_T status)
     
     if(status == 5) 
     {
-        Motor_PWM_Control(0, 0);
+        motor_pwm_control(0, 0);
     }
     else if (status > 5)
     {
-        Motor_PWM_Control(MOTOR_MIN_STA, status - MOTOR_SFCT_STA);
+        motor_pwm_control(MOTOR_MIN_STA, status - MOTOR_SFCT_STA);
     }
     else if (status < 5)
     {
-        Motor_PWM_Control(MOTOR_SFCT_STA, status);
+        motor_pwm_control(MOTOR_SFCT_STA, status);
     }
 
 }

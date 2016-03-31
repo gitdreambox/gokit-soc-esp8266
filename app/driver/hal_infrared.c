@@ -22,12 +22,10 @@ bool ICACHE_FLASH_ATTR ir_update_status(void)
     //if(GET_INF)
     if(gpio16_input_get())
     {
-//      GAgent_Printf(GAGENT_CRITICAL, "IR OFF");
         return 0;
     }
     else
     {
-//      GAgent_Printf(GAGENT_CRITICAL, "IR ON");
         return 1;
     }
 }

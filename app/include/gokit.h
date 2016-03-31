@@ -21,7 +21,7 @@ typedef uint8_t MOTOR_T;
 #define MCU_SOFTWARE_VER                        "00000004"
 #define MCU_PRODUCT_KEY                         "4dd210ab2ce84ba58e72d80efa8947ab"
 
-#define MOTOR_DF_VAL                            5
+#define MOTOR_DEFAULT_VAL                       5
 #define TEM_OFFSET_VAL                          13                      //Temperature offset value
 #define GPIO_KEY_NUM                            2
 
@@ -44,7 +44,8 @@ typedef uint8_t MOTOR_T;
 #define TIM_REP_TIMOUT                          (600000 / SOC_TIME_OUT) //600S Regularly report
 #define EKY_PRLONG_TIMOUT                       (10 / SOC_TIME_OUT)     //10 MS De
 #define TH_TIMEOUT                              (200 / SOC_TIME_OUT)    //100ms Temperature and humidity detection minimum time
-#define TH_MEANS_TIMEOUT                        (2000 / SOC_TIME_OUT)   //Temperature and humidity to calculate the mean time
+#define TH_MEANS_TIMEOUT                        (1000 / SOC_TIME_OUT)   //Temperature and humidity to calculate the mean time
+#define IF_TIMEOUT                              (2000 / SOC_TIME_OUT)
 
 /*****************************************************
 * WiFi模组工作状态

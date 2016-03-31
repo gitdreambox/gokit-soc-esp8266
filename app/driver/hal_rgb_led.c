@@ -99,7 +99,6 @@ static void data_dealwith_send(uint8_t r, uint8_t g, uint8_t b)
 void rgb_control(uint8_t R, uint8_t G, uint8_t B)
 {
     //contron power
-//  POW_HIGH;
     
     send_32zero();
     data_dealwith_send(R, G, B);	  // display red
@@ -110,7 +109,6 @@ void rgb_control(uint8_t R, uint8_t G, uint8_t B)
 void rgb_led_init(void)
 {
     //contron power
-//  POW_HIGH;
 
     send_32zero();
     data_dealwith_send(0, 0, 0);   // display red
@@ -121,9 +119,6 @@ void rgb_led_init(void)
 void rgb_gpio_init(void)
 {
     /* Migrate your driver code */
-    
-    // power con
-//  PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_GPIO15);
 
     // SCL/SDA
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_GPIO15); 

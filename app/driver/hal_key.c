@@ -27,19 +27,19 @@ uint32 key_count_time;
 *******************************************************************************/
 static uint8_t key_value_read(keys_typedef_t * keys)
 {
-    uint8_t ReadKey;
+    uint8_t read_key;
 
     if(!GPIO_INPUT_GET(keys->single_key[0]->gpio_id)) 
     {
-        ReadKey |= PRESS_KEY1;
+        read_key |= PRESS_KEY1;
     }
 
     if(!GPIO_INPUT_GET(keys->single_key[1]->gpio_id)) 
     {
-        ReadKey |= PRESS_KEY2;
+        read_key |= PRESS_KEY2;
     }
 
-    return ReadKey;
+    return read_key;
 }
 
 
