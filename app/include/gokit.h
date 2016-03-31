@@ -16,9 +16,9 @@ typedef uint8_t MOTOR_T;
 * gokit相关定义
 ******************************************************/
 #define MCU_PROTOCOL_VER                        "00000001"
-#define MCU_P0_VER                              "00000002"
-#define MCU_HARDWARE_VER                        "00000003"
-#define MCU_SOFTWARE_VER                        "00000004"
+#define MCU_P0_VER                              "00000001"
+#define MCU_HARDWARE_VER                        "03000001"
+#define MCU_SOFTWARE_VER                        "03000200"
 #define MCU_PRODUCT_KEY                         "4dd210ab2ce84ba58e72d80efa8947ab"
 
 #define MOTOR_DEFAULT_VAL                       5
