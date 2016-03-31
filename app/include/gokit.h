@@ -19,7 +19,7 @@ typedef uint8_t MOTOR_T;
 #define MCU_P0_VER                              "00000001"
 #define MCU_HARDWARE_VER                        "03000001"
 #define MCU_SOFTWARE_VER                        "03000200"
-#define MCU_PRODUCT_KEY                         "4dd210ab2ce84ba58e72d80efa8947ab"
+#define MCU_PRODUCT_KEY                         "6f3074fe43894547a4f1314bd7e3ae0b"
 
 #define MOTOR_DEFAULT_VAL                       5
 #define TEM_OFFSET_VAL                          13                      //Temperature offset value
