@@ -126,28 +126,32 @@ uint8_t dh11_read(uint8_t * temperature, uint8_t * humidity)
 {
     uint8_t curTem = 0, curHum = 0;
     uint16_t tem_means = 0, hum_means = 0;
-    uint8_t cur_i = 0; 
+    uint8_t cur_i = 0;
+    uint8_t ret = 0; 
 
-    dht11_read_data(&curTem, &curHum);
+    ret = dht11_read_data(&curTem, &curHum);
 
-    //Cycle store ten times stronghold
-    if(MEAN_NUM > temphum_typedef.th_num) 
+    if(1 != ret) 
     {
-        temphum_typedef.th_bufs[temphum_typedef.th_num][0] = curTem;
-        temphum_typedef.th_bufs[temphum_typedef.th_num][1] = curHum;
+        //Cycle store ten times stronghold
+        if(MEAN_NUM > temphum_typedef.th_num)
+        {
+            temphum_typedef.th_bufs[temphum_typedef.th_num][0] = curTem;
+            temphum_typedef.th_bufs[temphum_typedef.th_num][1] = curHum;
 
-        temphum_typedef.th_num++;
-    }
-    else
-    {
-        temphum_typedef.th_num = 0;
-        
-        temphum_typedef.th_bufs[temphum_typedef.th_num][0] = curTem;
-        temphum_typedef.th_bufs[temphum_typedef.th_num][1] = curHum; 
-        
-        temphum_typedef.th_num++; 
-    }
+            temphum_typedef.th_num++;
+        }
+        else
+        {
+            temphum_typedef.th_num = 0;
 
+            temphum_typedef.th_bufs[temphum_typedef.th_num][0] = curTem;
+            temphum_typedef.th_bufs[temphum_typedef.th_num][1] = curHum;
+
+            temphum_typedef.th_num++;
+        }
+    }
+    
     if(MEAN_NUM <= temphum_typedef.th_num) 
     {
         temphum_typedef.th_amount = MEAN_NUM;

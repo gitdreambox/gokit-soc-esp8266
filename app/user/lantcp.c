@@ -319,6 +319,8 @@ GAgent_Lan_SendDevInfo(pgcontext pgc,ppacket pTxBuf,int32 clientIndex)
     varc sendvarc;
     uint32 dataLen;
     uint16 wifi_firmware_ver_len;
+    uint16 tmp;
+    uint16 produckt_key_len = 32;
     int i;
     int offset=0;
 
@@ -327,7 +329,7 @@ GAgent_Lan_SendDevInfo(pgcontext pgc,ppacket pTxBuf,int32 clientIndex)
     offset += LAN_PROTOCOL_HEAD_LEN;
     /* varLen */
     /* flag(1B) | cmd(2B) | p0(116B)  */
-    dataLen = 1+2+116;
+    dataLen = 1+2+84;
     sendvarc = Tran2varc(dataLen);
     for(i=0;i<sendvarc.varcbty;i++)
     {
@@ -364,21 +366,27 @@ GAgent_Lan_SendDevInfo(pgcontext pgc,ppacket pTxBuf,int32 clientIndex)
          pTxBuf->phead[offset+i]=0;
     offset +=8;
     /* wifi_firmware_ver_len */
-    wifi_firmware_ver_len = pgc->gc.FirmwareVerLen[1] | (pgc->gc.FirmwareVerLen[0] << 8);
+    wifi_firmware_ver_len = 0;
     if(wifi_firmware_ver_len > FIRMWARE_LEN_MAX)
     {
         wifi_firmware_ver_len = FIRMWARE_LEN_MAX;
         pgc->gc.FirmwareVer[FIRMWARE_LEN_MAX - 1] = 0;
     }
-    *(uint16 *)(pTxBuf->phead + offset) = HTONS(wifi_firmware_ver_len);
+    //*(uint16 *)(pTxBuf->phead + offset) = HTONS(wifi_firmware_ver_len);
+    tmp = HTONS(wifi_firmware_ver_len);
+    os_memcpy((pTxBuf->phead + offset), &tmp, 2);
+
     offset +=2;
     /* wifi_firmware_ver */
     for(i = 0;i < wifi_firmware_ver_len;i++)
         pTxBuf->phead[offset+i]=pgc->gc.FirmwareVerLen[i];
     offset +=wifi_firmware_ver_len;
     /* produckt_key_len */
-    *(uint16 *)(pTxBuf->phead + offset) = HTONS(32);
-     offset +=2;
+//    *(uint16 *)(pTxBuf->phead + offset) = HTONS(32);
+    tmp = HTONS(produckt_key_len);
+    os_memcpy((pTxBuf->phead + offset), &tmp, 2);
+
+    offset +=2;
     /* produckt_key */
     for(i=0;i<32;i++)
          pTxBuf->phead[offset+i]=pgc->mcu.product_key[i];

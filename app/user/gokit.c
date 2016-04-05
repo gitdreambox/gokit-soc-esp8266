@@ -50,10 +50,19 @@ LOCAL uint16_t ICACHE_FLASH_ATTR gokit_ntohs(uint16_t value)
     return tmp_value;
 }
 
+unsigned long gokit_time_ms(void)
+{
+    return (system_get_time() / 1000); 
+}
+
+unsigned long gokit_time_s(void)
+{
+    return (system_get_time() / 1000*1000); 
+}
+
 LOCAL uint8_t ICACHE_FLASH_ATTR gokit_th_handle(void)
 {
     static uint16_t th_ctime = 0;
-    static uint16_t th_meanstime = 0; 
     static uint8_t pre_tem_means_val = 0; 
     static uint8_t pre_hum_means_val = 0; 
     uint8_t curTem = 0, curHum = 0; 
@@ -77,33 +86,20 @@ LOCAL uint8_t ICACHE_FLASH_ATTR gokit_th_handle(void)
             return (1); 
         }
         
-
-    }
-    
-    //Periodically calculate the average temperature and humidity
-    if(TH_MEANS_TIMEOUT < th_meanstime) 
-    {
-        th_meanstime = 0; 
-        
-        dh11_read(&curTem, &curHum); 
-        
         //Before and after the two values, it is determined whether or not reported
-        if((pre_tem_means_val != curTem) || (pre_hum_means_val != curHum)) 
+        if((pre_tem_means_val != curTem) || (pre_hum_means_val != curHum))
         {
-            pre_tem_means_val = (uint8_t)curTem; 
-            pre_hum_means_val = (uint8_t)curHum; 
+            pre_tem_means_val = (uint8_t)curTem;
+            pre_hum_means_val = (uint8_t)curHum;
 
             //Initiative to report data
-            read_typedef.temperature = pre_tem_means_val + TEM_OFFSET_VAL; 
-            read_typedef.humidity = pre_hum_means_val; 
-            
-            GAgent_Printf(GAGENT_DEBUG, "Temperature : %d , Humidity : %d", read_typedef.temperature, read_typedef.humidity); 
-            
-            return (1); 
+            read_typedef.temperature = pre_tem_means_val + TEM_OFFSET_VAL;
+            read_typedef.humidity = pre_hum_means_val;
+
+            return (1);
         }
     }
-    
-    th_meanstime++;
+        
     th_ctime++; 
     
     return (0); 
@@ -126,7 +122,7 @@ LOCAL uint8_t ICACHE_FLASH_ATTR gokit_ir_handle(void)
     return (0);
 }
 
-LOCAL uint8_t ICACHE_FLASH_ATTR gokit_report_handle(void)
+LOCAL uint8_t ICACHE_FLASH_ATTR gokit_regularly_report_handle(void)
 {
     static uint32 rep_ctime = 0;
 
@@ -142,6 +138,34 @@ LOCAL uint8_t ICACHE_FLASH_ATTR gokit_report_handle(void)
     
     rep_ctime++;
     
+    return (0);
+}
+
+LOCAL uint8_t ICACHE_FLASH_ATTR gokit_report_judge(void)
+{
+    static uint32 last_report_ms = 0;
+    uint32 intervals_ms = 0;
+    
+    if(0 < (gokit_time_ms() - last_report_ms))
+    {
+        intervals_ms = gokit_time_ms() - last_report_ms;
+    }
+    else
+    {
+        intervals_ms = (0xffffffff - last_report_ms) + gokit_time_ms();
+    }
+    
+    if(MIN_INTERVAL_TIME < intervals_ms) 
+    {
+        GAgent_Printf(GAGENT_CRITICAL, "led_r : %d, led_g : %d, led_b : %d, Tem : %d , Hum : %d, Inf : %d, mo :%d \n", read_typedef.led_r, read_typedef.led_g, read_typedef.led_b, read_typedef.temperature, read_typedef.humidity, read_typedef.infrared, gokit_ntohs(read_typedef.motor)); 
+        
+        gokit_report_data();
+        
+        last_report_ms = gokit_time_ms(); 
+        
+        return (1); 
+    }
+
     return (0);
 }
 
@@ -200,14 +224,21 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
 {
     write_info_t *ctl_data = (write_info_t *)rx_buf->ppayload;
 
-    switch(ctl_data->action) 
+    //Copy write data
+    memcpy((uint8_t *)&wirte_typedef, (uint8_t *)ctl_data, sizeof(wirte_typedef)); 
+    
+    if(NULL == wirte_typedef.action) 
+    {
+        GAgent_Printf(GAGENT_ERROR, "gokit_ctl_process ERROR \r\n"); 
+        
+        return;
+    }
+    
+    switch(wirte_typedef.action) 
     {
         case P0_W2D_CONTROL_DEVICE_ACTION:
         {
-            //Copy write data
-            memcpy((uint8_t *)&wirte_typedef, (uint8_t *)ctl_data, sizeof(wirte_typedef));
-
-            if(0x01 == (ctl_data->attr_flags >> 0) && 0x01)
+            if(0x01 == (wirte_typedef.attr_flags >> 0) && 0x01) 
             {
                 if(gokit_led_status != 1)
                 {
@@ -230,7 +261,7 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                 }
             }
 
-            if(0x01 == (ctl_data->attr_flags >> 1) && 0x01)
+            if(0x01 == (wirte_typedef.attr_flags >> 1) && 0x01) 
             {
                 if(wirte_typedef.led_cmd == LED_Costom)
                 {
@@ -276,7 +307,7 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                 }
             }
 
-            if(0x01 == (ctl_data->attr_flags >> 2) && 0x01)
+            if(0x01 == (wirte_typedef.attr_flags >> 2) && 0x01) 
             {
                 if(gokit_led_status != 1)
                 {
@@ -286,7 +317,7 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                 }
             }
 
-            if(0x01 == (ctl_data->attr_flags >> 3) && 0x01)
+            if(0x01 == (wirte_typedef.attr_flags >> 3) && 0x01) 
             {
                 if(gokit_led_status != 1)
                 {
@@ -296,7 +327,7 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                 }
             }
 
-            if(0x01 == (ctl_data->attr_flags >> 4) && 0x01)
+            if(0x01 == (wirte_typedef.attr_flags >> 4) && 0x01) 
             {
                 if(gokit_led_status != 1)
                 {
@@ -306,7 +337,7 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                 }
             }
 
-            if(0x01 == (ctl_data->attr_flags >> 5) && 0x01)
+            if(0x01 == (wirte_typedef.attr_flags >> 5) && 0x01) 
             {
                 read_typedef.motor = wirte_typedef.motor;
 
@@ -334,6 +365,8 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
         default:
             break;
     }
+    
+    memset((uint8_t *)&wirte_typedef, 0, sizeof(wirte_typedef)); 
 
     return ;
 }
@@ -359,7 +392,7 @@ void ICACHE_FLASH_ATTR gokit_timer_func(void)
     }
     
     //Regularly report conditional
-    ret = gokit_report_handle(); 
+    ret = gokit_regularly_report_handle(); 
     if(1 == ret)
     {
         condition_flag = 1; 
@@ -368,15 +401,11 @@ void ICACHE_FLASH_ATTR gokit_timer_func(void)
     //Qualifying the initiative to report
     if(0 != condition_flag)
     {
-        if(IF_TIMEOUT < rep_timec) 
+        ret = gokit_report_judge();
+        if(1 == ret)
         {
-            rep_timec = 0; 
-            
-            gokit_report_data();
-            
             condition_flag = 0;
         }
-        rep_timec++;
     }
 }
 
