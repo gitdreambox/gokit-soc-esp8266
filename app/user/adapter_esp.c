@@ -1404,10 +1404,11 @@ int32 ICACHE_FLASH_ATTR GAGENT_CheckOtaStatus( pgcontext pgc )
         if(dTime > 5)
         {
             pgContextData->rtinfo.lastRxOtaDataTime = 0;
+            pgContextData->rtinfo.isOtaRunning = 0;
+            pgContextData->rtinfo.otaWriteLen = 0;
             if(CLOUD_RES_WIFI_OTA == pgContextData->rtinfo.waninfo.CloudStatus)
             {
                 GAgent_Printf( GAGENT_CRITICAL,"Http timeout,GAgent download WIFI firmware failed,go to check MCU OTA!\n");
-                pgContextData->rtinfo.isOtaRunning = 0;
                 if(0 == pgContextData->rtinfo.onlinePushflag)
                 {
                     pgContextData->rtinfo.OTATypeflag = OTATYPE_MCU;
@@ -1424,7 +1425,6 @@ int32 ICACHE_FLASH_ATTR GAGENT_CheckOtaStatus( pgcontext pgc )
             {
 
                 GAgent_Printf( GAGENT_CRITICAL,"Http timeout,GAgent download MCU firmware failed!\n");
-                pgContextData->rtinfo.isOtaRunning = 0;
                 if(0 == pgContextData->rtinfo.onlinePushflag)
                 {
                     if(1 == GAgent_IsNeedDisableDID(pgContextData))

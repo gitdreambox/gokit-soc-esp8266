@@ -355,6 +355,7 @@ typedef struct runtimeinfo_t
     int8 bigdataUploadflag;
     int8 reqFirewareLenflag;
     int8 isOtaRunning;//正在进行OTA时不连接M2M
+    int32 otaWriteLen;
     int8 m2mDnsflag;//解析m2m结果
     uint32 mDevStartTime;
     fileInfo firmwareInfo;

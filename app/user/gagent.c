@@ -211,13 +211,14 @@ GAgent_VarInit( pgcontext *pgc )
     (*pgc)->rtinfo.webconfigflag = RET_FAILED;
     (*pgc)->rtinfo.file.using = 0;
     (*pgc)->rtinfo.OTATypeflag = OTATYPE_WIFI;
+    (*pgc)->rtinfo.otaWriteLen = 0;
     (*pgc)->rtinfo.onlinePushflag = 0;
     (*pgc)->rtinfo.bigdataUploadflag = 0;
     (*pgc)->rtinfo.reqFirewareLenflag = 1;
     (*pgc)->rtinfo.m2mDnsflag = RET_FAILED;
     (*pgc)->mcu.mcu_upgradeflag = 1;
     (*pgc)->mcu.uiBaund = 9600;
-
+    (*pgc)->rtinfo.lastRxOtaDataTime = 0;
     Cloud_ClearClientAttrs(*pgc, &((*pgc)->rtinfo.waninfo.srcAttrs));
     GAgent_DevSaveConfigData( &((*pgc)->gc) );
 }

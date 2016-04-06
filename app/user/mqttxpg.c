@@ -446,6 +446,8 @@ Mqtt_DispatchPublishPacket( pgcontext pgc,u8 *packetBuffer,int32 packetLen )
     u8 *pTemp;
     u16 cmd;
     int32 sn;
+    int32 u32Sn;
+    int32 buf_pos;
     u16 *pcmd=NULL;
 
     topiclen = mqtt_parse_pub_topic(packetBuffer, topic);
@@ -494,7 +496,9 @@ Mqtt_DispatchPublishPacket( pgcontext pgc,u8 *packetBuffer,int32 packetLen )
         GAgent_Printf( GAGENT_INFO,"Cloud CMD =%04X",cmd );
         if( cmd==0x0093 )
         {
-            sn = *(int32 *)&pHiP0Data[4+varlen+1 + sizeof(cmd)];
+            buf_pos = 4+varlen+1+sizeof(cmd);
+            os_memcpy(&u32Sn,pHiP0Data+buf_pos,4);
+            //sn = *(int32 *)&pHiP0Data[4+varlen+1 + sizeof(cmd)];
             sn = HTONL(sn);
             Cloud_SetClientAttrs(pgc, clientid, cmd, sn);
         }

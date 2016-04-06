@@ -32,7 +32,6 @@ read_info_t read_typedef;
 LOCAL key_typedef_t * single_key[GPIO_KEY_NUM]; 
 LOCAL keys_typedef_t keys; 
 
-uint8_t gokit_led_status = 0;
 uint8_t gokit_config_flag = 0; 
 
 LOCAL uint16_t ICACHE_FLASH_ATTR gokit_ntohs(uint16_t value)
@@ -157,7 +156,7 @@ LOCAL uint8_t ICACHE_FLASH_ATTR gokit_report_judge(void)
     
     if(MIN_INTERVAL_TIME < intervals_ms) 
     {
-        GAgent_Printf(GAGENT_CRITICAL, "led_r : %d, led_g : %d, led_b : %d, Tem : %d , Hum : %d, Inf : %d, mo :%d \n", read_typedef.led_r, read_typedef.led_g, read_typedef.led_b, read_typedef.temperature, read_typedef.humidity, read_typedef.infrared, gokit_ntohs(read_typedef.motor)); 
+        GAgent_Printf(GAGENT_DEBUG, "led_r : %d, led_g : %d, led_b : %d, Tem : %d , Hum : %d, Inf : %d, mo :%d \n", read_typedef.led_r, read_typedef.led_g, read_typedef.led_b, read_typedef.temperature, read_typedef.humidity, read_typedef.infrared, gokit_ntohs(read_typedef.motor)); 
         
         gokit_report_data();
         
@@ -211,9 +210,9 @@ void ICACHE_FLASH_ATTR gokit_wifi_Status(pgcontext pgc)
 
     GAgentStatus = pgc->rtinfo.GAgentStatus;
 
-    if(((GAgentStatus & WIFI_CONNCLOUDS) == WIFI_CONNCLOUDS) && (gokit_config_flag == 1))
+    if(((GAgentStatus & WIFI_CONNROUTER) == WIFI_CONNROUTER) && (gokit_config_flag == 1)) 
     {
-        GAgent_Printf(GAGENT_CRITICAL, "@@@@ W2M->WIFI_CONNCLOUDS \r\n"); 
+        GAgent_Printf(GAGENT_CRITICAL, "@@@@ W2M->WIFI_CONNROUTER \r\n"); 
         
         gokit_config_flag = 0;
         rgb_control(0, 0, 0);
@@ -222,6 +221,7 @@ void ICACHE_FLASH_ATTR gokit_wifi_Status(pgcontext pgc)
 
 void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
 {
+    static uint8_t gokit_led_status = 0;
     write_info_t *ctl_data = (write_info_t *)rx_buf->ppayload;
 
     //Copy write data
@@ -240,24 +240,21 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
         {
             if(0x01 == (wirte_typedef.attr_flags >> 0) && 0x01) 
             {
-                if(gokit_led_status != 1)
+                if(wirte_typedef.led_cmd == LED_OnOff)
                 {
-
-                    if(wirte_typedef.led_cmd == LED_OnOff)
-                    {
-                        rgb_control(0, 0, 0);
-                        read_typedef.led_cmd = LED_OnOff;
-                        read_typedef.led_r = 0;
-                        read_typedef.led_g = 0;
-                        read_typedef.led_b = 0; 
-                        GAgent_Printf(GAGENT_DEBUG, "########## setled_Off \r\n");
-                    }
-                    if(wirte_typedef.led_cmd == LED_OnOn)
-                    {
-                        read_typedef.led_cmd = LED_OnOn;
-                        rgb_control(254, 0, 0);
-                        GAgent_Printf(GAGENT_DEBUG, "########## setled_On \r\n");
-                    }
+                    read_typedef.led_cmd &= ~(LED_OnOn);
+                    
+                    rgb_control(0, 0, 0);
+                    
+                    GAgent_Printf(GAGENT_DEBUG, "########## setled_Off \r\n");
+                }
+                if(wirte_typedef.led_cmd == LED_OnOn)
+                {
+                    read_typedef.led_cmd |= LED_OnOn;
+                    
+                    rgb_control(254, 0, 0);
+                    
+                    GAgent_Printf(GAGENT_DEBUG, "########## setled_On \r\n");
                 }
             }
 
@@ -265,45 +262,47 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
             {
                 if(wirte_typedef.led_cmd == LED_Costom)
                 {
-                    read_typedef.led_cmd = LED_Costom;
-                    read_typedef.led_r = 0;
-                    read_typedef.led_g = 0;
-                    read_typedef.led_b = 0;
                     gokit_led_status = 0;
-                    rgb_control(0, 0, 0);
+                    
+                    read_typedef.led_cmd &= ~(1 << 1); 
+                    read_typedef.led_cmd &= ~(1 << 2); 
+                    
                     GAgent_Printf(GAGENT_DEBUG, "########## SetLED LED_Costom \r\n");
                 }
+                
                 if(wirte_typedef.led_cmd == LED_Yellow)
                 {
                     gokit_led_status = 1;
-                    read_typedef.led_cmd = LED_Yellow;
-                    read_typedef.led_r = 254;
-                    read_typedef.led_g = 254;
-                    read_typedef.led_b = 0;
-
-                    rgb_control(254, 254, 0);
-                    GAgent_Printf(GAGENT_DEBUG, "########## SetLED LED_Yellow \r\n");
+                    
+                    read_typedef.led_cmd |= (1 << 1);
+                    read_typedef.led_cmd &= ~(1 << 2);
+                    
+                    rgb_control(254, 254, 0); 
+                    
+                    GAgent_Printf(GAGENT_DEBUG, "########## SetLED LED_Yellow \r\n"); 
                 }
 
                 if(wirte_typedef.led_cmd == LED_Purple)
                 {
-                    read_typedef.led_cmd = LED_Purple;
-                    read_typedef.led_r = 254;
-                    read_typedef.led_g = 0;
-                    read_typedef.led_b = 70;
-                    gokit_led_status = 1;
+                    gokit_led_status = 1; 
+
+                    read_typedef.led_cmd &= ~(1 << 1); 
+                    read_typedef.led_cmd |= (1 << 2);
+                    
                     rgb_control(254, 0, 70);
-                    GAgent_Printf(GAGENT_DEBUG, "########## SetLED LED_Purple \r\n");
+                    
+                    GAgent_Printf(GAGENT_DEBUG, "########## SetLED LED_Purple \r\n"); 
                 }
                 if(wirte_typedef.led_cmd == LED_Pink)
                 {
-                    read_typedef.led_cmd = LED_Pink;
-                    read_typedef.led_r = 238;
-                    read_typedef.led_g = 30;
-                    read_typedef.led_b = 30;
                     gokit_led_status = 1;
+
+                    read_typedef.led_cmd |= (1 << 1);
+                    read_typedef.led_cmd |= (1 << 2);
+                    
                     rgb_control(238, 30, 30);
-                    GAgent_Printf(GAGENT_DEBUG, "########## SetLED LED_Pink \r\n");
+                    
+                    GAgent_Printf(GAGENT_DEBUG, "########## SetLED LED_Pink \r\n"); 
                 }
             }
 
@@ -312,7 +311,9 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                 if(gokit_led_status != 1)
                 {
                     read_typedef.led_r = wirte_typedef.led_r;
+                    
                     GAgent_Printf(GAGENT_DEBUG, "########## W2D Control LED_R = %d \r\n", wirte_typedef.led_r);
+                    
                     rgb_control(read_typedef.led_r, read_typedef.led_g, read_typedef.led_b);
                 }
             }
@@ -322,7 +323,9 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                 if(gokit_led_status != 1)
                 {
                     read_typedef.led_g = wirte_typedef.led_g;
+                    
                     GAgent_Printf(GAGENT_DEBUG, "########## W2D Control LED_G = %d \r\n", wirte_typedef.led_g);
+                    
                     rgb_control(read_typedef.led_r, read_typedef.led_g, read_typedef.led_b);
                 }
             }
@@ -332,7 +335,9 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                 if(gokit_led_status != 1)
                 {
                     read_typedef.led_b = wirte_typedef.led_b;
+                    
                     GAgent_Printf(GAGENT_DEBUG, "########## W2D Control LED_B = %d \r\n", wirte_typedef.led_b);
+                    
                     rgb_control(read_typedef.led_r, read_typedef.led_g, read_typedef.led_b);
                 }
             }
@@ -343,9 +348,11 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
 
                 #ifdef MOTOR_16
                 GAgent_Printf(GAGENT_DEBUG, "########## W2D Control Motor = %d \r\n", gokit_ntohs(read_typedef.motor)); 
+                
                 motor_control(gokit_ntohs(read_typedef.motor));
                 #else
                 GAgent_Printf(GAGENT_DEBUG, "########## W2D Control Motor = %d \r\n", read_typedef.motor); 
+                
                 motor_control(read_typedef.motor);
                 #endif
             }

@@ -174,7 +174,6 @@ Http_ResGetFirmware( pgcontext pgc,int32 socketid,u16 length,uint8 otatype,uint8
     int32 ret,i;
     int32 headlen = 0;
     static int32 offset = 0;
-    static int32 writelen = 0;
     static int8 downloadflag = 1;
     uint8 md5_calc[16] = {0};
     uint8 *buf = NULL;
@@ -189,9 +188,10 @@ Http_ResGetFirmware( pgcontext pgc,int32 socketid,u16 length,uint8 otatype,uint8
         return RET_FAILED;
     }
 
-    if( 0 == writelen )
+    if( 0 == pgContextData->rtinfo.otaWriteLen )
     {
         downloadflag = 1;
+        offset = 0;
         ret = Http_Response_Code( httpReceiveBuf );
         if(200 != ret)
         {
@@ -214,16 +214,16 @@ Http_ResGetFirmware( pgcontext pgc,int32 socketid,u16 length,uint8 otatype,uint8
             pgc->gc.wifiFirmwareLen = pgc->rtinfo.filelen;
         }
         buf = httpReceiveBuf + headlen;
-        writelen = length - headlen;
+        pgContextData->rtinfo.otaWriteLen = length - headlen;
         GAgent_MD5Init(&ctx);
     }
     else
     {
-        writelen = length;
+        pgContextData->rtinfo.otaWriteLen = length;
         buf = httpReceiveBuf;
     }
-    ret = GAgent_SaveUpgradFirmware( offset, buf, writelen, otatype );
-    os_printf("totallen = %d\n",offset+writelen);
+    ret = GAgent_SaveUpgradFirmware( offset, buf, pgContextData->rtinfo.otaWriteLen, otatype );
+    os_printf("totallen = %d\n",offset+pgContextData->rtinfo.otaWriteLen);
     if(ret != 0)
     {
         GAgent_Printf(GAGENT_INFO, "[CLOUD]%s OTA upgrad fail at off:0x%x", __func__, offset);
@@ -233,12 +233,12 @@ Http_ResGetFirmware( pgcontext pgc,int32 socketid,u16 length,uint8 otatype,uint8
             //system_os_post( 1, SIG_CLOUD_M2M, NULL);
         }
         offset = 0;
-        writelen = 0;
+        pgContextData->rtinfo.otaWriteLen = 0;
         downloadflag = 0;
         return RET_FAILED;
     }
-    offset += writelen;
-    GAgent_MD5Update(&ctx, buf, writelen);
+    offset += pgContextData->rtinfo.otaWriteLen;
+    GAgent_MD5Update(&ctx, buf, pgContextData->rtinfo.otaWriteLen);
     if( pgc->rtinfo.filelen == offset )
     {
         GAgent_MD5Final(&ctx, md5_calc);
@@ -247,14 +247,14 @@ Http_ResGetFirmware( pgcontext pgc,int32 socketid,u16 length,uint8 otatype,uint8
 
             GAgent_Printf(GAGENT_WARNING,"[CLOUD]md5 fail!");
             offset = 0;
-            writelen = 0;
+            pgContextData->rtinfo.otaWriteLen = 0;
             return RET_FAILED;
         }
         else
         {
             GAgent_DevSaveConfigData( &(pgc->gc));
             offset = 0;
-            writelen = 0;
+            pgContextData->rtinfo.otaWriteLen = 0;
             pgc->rtinfo.firmwareInfo.file_offset = 4096;//sizeof(fileInfo);
             pgc->rtinfo.firmwareInfo.file_len = pgc->rtinfo.filelen;
             memcpy(pgc->rtinfo.firmwareInfo.soft_ver,pgc->gc.FirmwareVer,8);

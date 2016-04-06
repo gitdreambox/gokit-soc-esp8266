@@ -669,7 +669,6 @@ Cloud_ConfigDataHandle( pgcontext pgc /*int32 cloudstatus*/ )
     int32 cloudstatus = 0;
     pgcontext pGlobalVar=NULL;
     pgconfig pConfigData=NULL;
-    static int8 wifiOTARunning = 0;
 
     uint16 GAgentStatus = 0;
     int8 *pDeviceID=NULL;
@@ -683,12 +682,6 @@ Cloud_ConfigDataHandle( pgcontext pgc /*int32 cloudstatus*/ )
     pGlobalVar = pgc;
     cloudstatus = pgc->rtinfo.waninfo.CloudStatus;
     GAgentStatus = pgc->rtinfo.GAgentStatus;
-
-    if( 1 == wifiOTARunning )
-    {
-        GAgent_Printf(GAGENT_DEBUG,"WIFI OTA is running!\n");
-        return 1 ;
-    }
 
     if((GAgentStatus&WIFI_STATION_CONNECTED) !=  WIFI_STATION_CONNECTED)
     {
@@ -987,7 +980,6 @@ Cloud_ConfigDataHandle( pgcontext pgc /*int32 cloudstatus*/ )
                             else
                             {
                                 GAgent_Printf( GAGENT_CRITICAL,"WIFI OTA is running!\n");
-                                wifiOTARunning = 1;
                                 return 0;
                                 pgc->rtinfo.OTATypeflag = OTATYPE_MCU;
                                 GAgent_SetCloudConfigStatus( pgc,CLOUD_RES_GET_SOFTVER );
