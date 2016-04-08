@@ -499,7 +499,7 @@ Mqtt_DispatchPublishPacket( pgcontext pgc,u8 *packetBuffer,int32 packetLen )
             buf_pos = 4+varlen+1+sizeof(cmd);
             os_memcpy(&u32Sn,pHiP0Data+buf_pos,4);
             //sn = *(int32 *)&pHiP0Data[4+varlen+1 + sizeof(cmd)];
-            sn = HTONL(sn);
+            sn = HTONL(u32Sn);
             Cloud_SetClientAttrs(pgc, clientid, cmd, sn);
         }
         else if( cmd == 0x0090 )
