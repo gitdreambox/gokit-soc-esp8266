@@ -426,12 +426,39 @@ Local_McuOTA_CheckValid( pgcontext pgc,uint8* localRxbuf,uint16 *piecelen )
     }
 }
 
+void ICACHE_FLASH_ATTR GAgent_ctl_ack(pgcontext pgc)
+{
+    resetPacket(pgc->rtinfo.Txbuf);
+    ppacket Rxbuf = pgc->rtinfo.Txbuf;
+    Rxbuf->type = SetPacketType(Rxbuf->type, LOCAL_DATA_IN, 1);
+    Rxbuf->type = SetPacketType(Rxbuf->type, CLOUD_DATA_IN, 0);
+    ParsePacket(Rxbuf);
+
+    if(pgc->ls.srcAttrs.fd >= 0)
+    {
+        Rxbuf->type = SetPacketType(Rxbuf->type, CLOUD_DATA_OUT, 0);
+        setChannelAttrs(pgc, NULL, &pgc->ls.srcAttrs, 0);
+        Lan_ClearClientAttrs(pgc, &pgc->ls.srcAttrs);
+    }
+    else if(os_strlen(pgc->rtinfo.waninfo.srcAttrs.phoneClientId) > 0)
+    {
+        Rxbuf->type = SetPacketType(Rxbuf->type, LAN_TCP_DATA_OUT, 0);
+        setChannelAttrs(pgc, &pgc->rtinfo.waninfo.srcAttrs, NULL, 0);
+        Cloud_ClearClientAttrs(pgc, &pgc->rtinfo.waninfo.srcAttrs);
+    }
+
+    dealPacket(pgc, Rxbuf);
+}
+
 int32 ICACHE_FLASH_ATTR
 GAgent_LocalDataWriteP0( pgcontext pgc,int32 fd,ppacket pTxBuf,uint8 cmd )
 {
-    //andygao
     //云端及app数据处理接口
-    gokit_ctl_process(pgc, pTxBuf);
+    gokit_ctl_process(pgc, pTxBuf); 
+
+    //Reply ACK
+    GAgent_ctl_ack(pgc); 
+    
     GAgent_Printf(GAGENT_DEBUG, "@@@@ local data write p0 ");
 
     return ;
@@ -501,11 +528,6 @@ int32 ICACHE_FLASH_ATTR
 GAgent_LocalDataWriteP0withFlag( pgcontext pgc,int32 fd,ppacket pTxBuf,
                                         uint8 cmd,int16 flag,int32 timeout )
 {
-    //andygao
-    //云端及app数据处理接口
-    gokit_ctl_process(pgc, pTxBuf);
-    GAgent_Printf(GAGENT_DEBUG, "@@@@ local data write p0 with flag ");
-
     return ;
 
     int32 ret = RET_FAILED;

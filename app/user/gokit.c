@@ -204,30 +204,6 @@ void ICACHE_FLASH_ATTR gokit_report_data(void)
     dealPacket(pgContextData, rxbuf);
 }
 
-LOCAL void ICACHE_FLASH_ATTR gokit_ctl_ack(pgcontext pgc)
-{
-    resetPacket(pgc->rtinfo.Txbuf);
-    ppacket Rxbuf = pgc->rtinfo.Txbuf;
-    Rxbuf->type = SetPacketType(Rxbuf->type, LOCAL_DATA_IN, 1);
-    Rxbuf->type = SetPacketType(Rxbuf->type, CLOUD_DATA_IN, 0);
-    ParsePacket(Rxbuf);
-
-    if(pgc->ls.srcAttrs.fd >= 0)
-    {
-        Rxbuf->type = SetPacketType(Rxbuf->type, CLOUD_DATA_OUT, 0);
-        setChannelAttrs(pgc, NULL, &pgc->ls.srcAttrs, 0);
-        Lan_ClearClientAttrs(pgc, &pgc->ls.srcAttrs);
-    }
-    else if(os_strlen(pgc->rtinfo.waninfo.srcAttrs.phoneClientId) > 0)
-    {
-        Rxbuf->type = SetPacketType(Rxbuf->type, LAN_TCP_DATA_OUT, 0);
-        setChannelAttrs(pgc, &pgc->rtinfo.waninfo.srcAttrs, NULL, 0);
-        Cloud_ClearClientAttrs(pgc, &pgc->rtinfo.waninfo.srcAttrs);
-    }
-
-    dealPacket(pgc, Rxbuf); 
-}
-
 void ICACHE_FLASH_ATTR gokit_wifi_Status(pgcontext pgc)
 { 
     uint16 GAgentStatus = 0;
@@ -257,9 +233,6 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
         
         return;
     }
-    
-    //Reply Gokit ACK
-    gokit_ctl_ack(pgc); 
     
     switch(wirte_typedef.action)
     {
