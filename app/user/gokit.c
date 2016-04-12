@@ -182,7 +182,21 @@ void ICACHE_FLASH_ATTR gokit_read_data(void)
     rxbuf->type = SetPacketType(rxbuf->type, CLOUD_DATA_IN, 0);
     rxbuf->type = SetPacketType(rxbuf->type, LAN_TCP_DATA_IN, 0);
     ParsePacket(rxbuf);
-    setChannelAttrs(pgContextData, NULL, NULL, 1);
+    
+    //judgment APP or Gagent
+    if(pgContextData->ls.srcAttrs.fd >= 0)
+    {
+        rxbuf->type = SetPacketType(rxbuf->type, CLOUD_DATA_OUT, 0);
+        setChannelAttrs(pgContextData, NULL, &pgContextData->ls.srcAttrs, 0);
+        Lan_ClearClientAttrs(pgContextData, &pgContextData->ls.srcAttrs);
+    }
+    else if(os_strlen(pgContextData->rtinfo.waninfo.srcAttrs.phoneClientId) > 0)
+    {
+        rxbuf->type = SetPacketType(rxbuf->type, LAN_TCP_DATA_OUT, 0);
+        setChannelAttrs(pgContextData, &pgContextData->rtinfo.waninfo.srcAttrs, NULL, 0);
+        Cloud_ClearClientAttrs(pgContextData, &pgContextData->rtinfo.waninfo.srcAttrs);
+    }
+
     dealPacket(pgContextData, rxbuf);
 }
 

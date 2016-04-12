@@ -426,12 +426,19 @@ Local_McuOTA_CheckValid( pgcontext pgc,uint8* localRxbuf,uint16 *piecelen )
     }
 }
 
-void ICACHE_FLASH_ATTR GAgent_ctl_ack(pgcontext pgc)
+void ICACHE_FLASH_ATTR GAgent_ctl_ack(pgcontext pgc,ppacket pTxBuf)
 {
-    resetPacket(pgc->rtinfo.Txbuf);
-    ppacket Rxbuf = pgc->rtinfo.Txbuf;
+//action 01
+    if(pTxBuf->ppayload[0] != P0_W2D_CONTROL_DEVICE_ACTION) 
+    {
+        return;
+    }
+
+    resetPacket(pTxBuf);
+    ppacket Rxbuf = pTxBuf;
     Rxbuf->type = SetPacketType(Rxbuf->type, LOCAL_DATA_IN, 1);
     Rxbuf->type = SetPacketType(Rxbuf->type, CLOUD_DATA_IN, 0);
+    Rxbuf->type = SetPacketType(Rxbuf->type, LAN_TCP_DATA_IN, 0);
     ParsePacket(Rxbuf);
 
     if(pgc->ls.srcAttrs.fd >= 0)
@@ -453,12 +460,14 @@ void ICACHE_FLASH_ATTR GAgent_ctl_ack(pgcontext pgc)
 int32 ICACHE_FLASH_ATTR
 GAgent_LocalDataWriteP0( pgcontext pgc,int32 fd,ppacket pTxBuf,uint8 cmd )
 {
+    copyPacket(pTxBuf, pgc->rtinfo.local_ack); 
+    
+    //Reply ACK
+    GAgent_ctl_ack(pgc, pgc->rtinfo.local_ack); 
+    
     //云端及app数据处理接口
     gokit_ctl_process(pgc, pTxBuf); 
 
-    //Reply ACK
-    GAgent_ctl_ack(pgc); 
-    
     GAgent_Printf(GAGENT_DEBUG, "@@@@ local data write p0 ");
 
     return ;

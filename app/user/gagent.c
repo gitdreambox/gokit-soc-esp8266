@@ -63,6 +63,19 @@ GAgent_VarInit( pgcontext *pgc )
     int bufCap = BUF_LEN;
     (*pgc)->rtinfo.firstStartUp = 1;
 
+    //local ack
+    (*pgc)->rtinfo.local_ack = (ppacket)os_malloc(sizeof(packet)); 
+    (*pgc)->rtinfo.local_ack->allbuf = (uint8 *)os_malloc(totalCap); 
+    while( (*pgc)->rtinfo.local_ack->allbuf == NULL) 
+    {
+        (*pgc)->rtinfo.local_ack->allbuf = (uint8 *)os_malloc(totalCap); 
+        //sleep(1);
+    }
+    os_memset((*pgc)->rtinfo.local_ack->allbuf, 0, totalCap); 
+    (*pgc)->rtinfo.local_ack->totalcap = totalCap; 
+    (*pgc)->rtinfo.local_ack->bufcap = bufCap; 
+    resetPacket((*pgc)->rtinfo.local_ack); 
+    
     //txbuf
     (*pgc)->rtinfo.Txbuf = (ppacket)os_malloc( sizeof(packet) );
     (*pgc)->rtinfo.Txbuf->allbuf = (uint8 *)os_malloc( totalCap );

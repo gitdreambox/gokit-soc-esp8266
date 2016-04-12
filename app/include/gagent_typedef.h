@@ -328,6 +328,8 @@ typedef struct runtimeinfo_t
 
     WanInfo waninfo;
     localmodule local;
+    
+    ppacket local_ack; /* send ack from local*/
 
     ppacket Txbuf;/* send data to local buf */
     ppacket Rxbuf;/* receive data from local buf UdpRxbuf*/
