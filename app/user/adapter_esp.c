@@ -269,6 +269,14 @@ GAgent_SaveFile( int32 offset,uint8 *buf,uint32 len,uint8 filetype )
     uint8 piece_offset =0;
     os_memset(tmpbuf, 0, sizeof(tmpbuf));
 
+    if( 0 == offset )
+    {
+        file_offset = 0;
+        remainlen = 0;
+        lastremainlen = 0;
+        erasecount = 0;
+    }
+        
     GAgent_SetFlashPara(filetype, &start_addr, &total_len, &serial_num);
 
     if( file_offset+len >= 4096*erasecount )
