@@ -22,8 +22,13 @@ typedef uint8_t MOTOR_T;
 #define MCU_PRODUCT_KEY                         "6f3074fe43894547a4f1314bd7e3ae0b"
 
 #define MOTOR_DEFAULT_VAL                       5
-#define TEM_OFFSET_VAL                          13                      //Temperature offset value
 #define GPIO_KEY_NUM                            2
+#define TEM_RATIO_VER                           1
+#define TEM_ADDITION_VER                        (-13)
+#define HUM_RATIO_VER                           1
+#define HUM_ADDITION_VER                        0
+#define MOT_RATIO_VER                           1
+#define MOT_ADDITION_VER                        (-5)
 
 /*****************************************************
 * I/O相关定义
@@ -114,7 +119,9 @@ typedef struct
 }write_info_t;
 #pragma pack()
 
+void gokit_software_init(void);
 void gokit_hardware_init(void);
+void gokit_report_data(void);
 void gokit_timer_func(void);
 void gokit_wifi_Status(pgcontext pgc);
 void gokit_ctl_process(pgcontext pgc, ppacket rx_buf);

@@ -49,6 +49,50 @@ LOCAL uint16_t ICACHE_FLASH_ATTR gokit_ntohs(uint16_t value)
     return tmp_value;
 }
 
+/** 
+* @brief Data Type Conversions x : 转化为协议中的x值及实际通讯传输的值
+* 
+* @param ratio : 修正系数k, default=1 
+* @param addition : 增量m, default=0
+* @param pre_value : 作为协议中的y值, 是App UI界面的显示值
+* 
+* @return uint16_t aft_value : 作为协议中的x值, 是实际通讯传输的值
+*/
+LOCAL uint32 ICACHE_FLASH_ATTR gokit_dtc_x(uint32 ratio, int32 addition, uint32 pre_value)
+{
+    uint32 temp_value = 0; 
+    uint32 aft_value = 0; 
+    
+    temp_value = (uint32)pre_value; 
+    
+    //x=(y - m)/k
+    aft_value = ((temp_value - addition) / ratio); 
+
+    return aft_value;
+}
+
+/** 
+* @brief Data Type Conversions y : 转化为协议中的y值及App UI界面的显示值
+* 
+* @param ratio : 修正系数k, default=1 
+* @param addition : 增量m, default=0
+* @param pre_value : 作为协议中的x值, 是实际通讯传输的值
+* 
+* @return int16_t : 作为协议中的y值, 是App UI界面的显示值
+*/
+LOCAL int32 ICACHE_FLASH_ATTR gokit_dtc_y(uint32 ratio, int32 addition, uint32 pre_value)
+{
+    uint32 temp_value = 0;
+    int32 aft_value = 0; 
+
+    temp_value = pre_value;
+
+    //y=k * x + m
+    aft_value = (temp_value * ratio + addition); 
+
+    return aft_value;
+}
+
 unsigned long gokit_time_ms(void)
 {
     return (system_get_time() / 1000); 
@@ -79,8 +123,9 @@ LOCAL uint8_t ICACHE_FLASH_ATTR gokit_th_handle(void)
             pre_tem_means_val = curTem; 
             pre_hum_means_val = curHum; 
 
-            read_typedef.temperature = pre_tem_means_val + TEM_OFFSET_VAL; 
-            read_typedef.humidity = pre_hum_means_val;
+            //Assignment to report data
+            read_typedef.temperature = (uint8_t)gokit_dtc_x(TEM_RATIO_VER, TEM_ADDITION_VER, (uint32)pre_tem_means_val); 
+            read_typedef.humidity = (uint8_t)gokit_dtc_x(HUM_RATIO_VER, HUM_ADDITION_VER, (uint32)pre_hum_means_val); 
             
             return (1); 
         }
@@ -88,12 +133,12 @@ LOCAL uint8_t ICACHE_FLASH_ATTR gokit_th_handle(void)
         //Before and after the two values, it is determined whether or not reported
         if((pre_tem_means_val != curTem) || (pre_hum_means_val != curHum))
         {
-            pre_tem_means_val = (uint8_t)curTem;
-            pre_hum_means_val = (uint8_t)curHum;
+            pre_tem_means_val = curTem;
+            pre_hum_means_val = curHum;
 
-            //Initiative to report data
-            read_typedef.temperature = pre_tem_means_val + TEM_OFFSET_VAL;
-            read_typedef.humidity = pre_hum_means_val;
+            //Assignment to report data
+            read_typedef.temperature = (uint8_t)gokit_dtc_x(TEM_RATIO_VER, TEM_ADDITION_VER, (uint32)pre_tem_means_val); 
+            read_typedef.humidity = (uint8_t)gokit_dtc_x(HUM_RATIO_VER, HUM_ADDITION_VER, (uint32)pre_hum_means_val); 
 
             return (1);
         }
@@ -241,7 +286,7 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
     //Copy write data
     memcpy((uint8_t *)&wirte_typedef, (uint8_t *)ctl_data, sizeof(wirte_typedef)); 
     
-    if(NULL == wirte_typedef.action) 
+    if(0 == wirte_typedef.action) 
     {
         GAgent_Printf(GAGENT_ERROR, "gokit_ctl_process ERROR \r\n"); 
         
@@ -280,6 +325,8 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                     
                     read_typedef.led_cmd &= ~(1 << 1); 
                     read_typedef.led_cmd &= ~(1 << 2); 
+                    
+                    rgb_control(read_typedef.led_r, read_typedef.led_g, read_typedef.led_b);
                     
                     GAgent_Printf(GAGENT_DEBUG, "########## SetLED LED_Costom \r\n");
                 }
@@ -363,13 +410,15 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                 #ifdef MOTOR_16
                 GAgent_Printf(GAGENT_DEBUG, "########## W2D Control Motor = %d \r\n", gokit_ntohs(read_typedef.motor)); 
                 
-                motor_control(gokit_ntohs(read_typedef.motor));
+                motor_control((MOTOR_T)gokit_dtc_y(MOT_RATIO_VER, MOT_ADDITION_VER, (uint32)(gokit_ntohs(read_typedef.motor)) - MOT_ADDITION_VER)); 
                 #else
                 GAgent_Printf(GAGENT_DEBUG, "########## W2D Control Motor = %d \r\n", read_typedef.motor); 
                 
-                motor_control(read_typedef.motor);
+                motor_control((MOTOR_T)gokit_dtc_y(MOT_RATIO_VER, MOT_ADDITION_VER, (uint32)read_typedef.motor) - MOT_ADDITION_VER); 
                 #endif
             }
+            
+            GAgent_Printf(GAGENT_DEBUG, "led_r : %d, led_g : %d, led_b : %d, Tem : %d , Hum : %d, Inf : %d, mo :%d \n", read_typedef.led_r, read_typedef.led_g, read_typedef.led_b, read_typedef.temperature, read_typedef.humidity, read_typedef.infrared, gokit_ntohs(read_typedef.motor)); 
             
             //The initiative to report after every write
             gokit_report_data(); 

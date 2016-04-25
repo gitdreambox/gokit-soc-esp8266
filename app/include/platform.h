@@ -19,8 +19,8 @@
 
 #include "gagent_typedef.h"
 
-#define WIFI_SOFTVAR    "04020008"
-#define WIFI_HARDVER    "00ESP826"
+#define WIFI_SOFTVAR    "03000200"
+#define WIFI_HARDVER    "03000001"
 
 #define UART_NAME       "/dev/ttyUSB0"
 #define NET_ADAPTHER    "eth0"

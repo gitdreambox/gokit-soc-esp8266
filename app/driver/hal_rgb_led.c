@@ -113,6 +113,8 @@ void rgb_led_init(void)
     send_32zero();
     data_dealwith_send(0, 0, 0);   // display red
     data_dealwith_send(0, 0, 0);
+    
+    rgb_control(0, 0, 0);
 }
 
 
