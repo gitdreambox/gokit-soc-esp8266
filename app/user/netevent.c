@@ -121,7 +121,7 @@ tcp_server_listen(void *arg)
 {
     struct espconn *pesp_conn = arg;
     pgContextData->ls.tcpServerFd = 1;
-
+    espconn_set_opt(pesp_conn, ESPCONN_COPY);
     espconn_regist_recvcb(pesp_conn, tcp_server_recvcb);
     espconn_regist_reconcb(pesp_conn, tcp_server_reconcb);
     espconn_regist_disconcb(pesp_conn, tcp_server_disconcb);

@@ -64,8 +64,8 @@ static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
     //累加按键时间
     key_count_time++;
         
-    //KeyCT 1MS+1  按键消抖20MS
-    if(key_count_time >= (20 / keys->key_timer_ms)) 
+    //KeyCT 1MS+1  按键消抖30MS
+    if(key_count_time >= (30 / keys->key_timer_ms)) 
     {
         key_count_time = 0; 
         Key_Check = 1;
@@ -118,7 +118,7 @@ static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
                 if(Key_press == Key_Prev)
                 {
                     Key_LongCheck++;
-                    if(Key_LongCheck >= 100)    //长按2S
+                    if(Key_LongCheck >= 100)    //长按3S (消抖30MS * 100)
                     {
                         Key_LongCheck = 0;
                         Key_State = 3;
