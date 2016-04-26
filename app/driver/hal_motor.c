@@ -14,6 +14,7 @@
 *********************************************************/
 
 #include "driver/hal_motor.h"
+#include <stdlib.h>
 #include "pwm.h"
 #include "gagent.h"
 
@@ -52,24 +53,24 @@ void ICACHE_FLASH_ATTR motor_pwm_control(uint8_t m0, uint8_t m1)
 
 }
 
-void ICACHE_FLASH_ATTR motor_control(MOTOR_T status)
+void ICACHE_FLASH_ATTR motor_control(_MOTOR_T status)
 {
-    if((0 > status) || (10 < status)) 
+    if((-5 > status) || (5 < status)) 
     {
         GAgent_Printf(GAGENT_ERROR, "Motor_status Error : [%d] \r\n", status); 
     }
     
-    if(status == 5) 
+    if(status == 0) 
     {
         motor_pwm_control(0, 0);
     }
-    else if (status > 5)
+    else if (status > 0)
     {
-        motor_pwm_control(MOTOR_MIN_STA, status - MOTOR_SFCT_STA);
+        motor_pwm_control(MOTOR_MIN_STA, (uint8_t)status); 
     }
-    else if (status < 5)
+    else if (status < 0)
     {
-        motor_pwm_control(MOTOR_SFCT_STA, status);
+        motor_pwm_control(MOTOR_SFCT_STA, (uint8_t)(MOTOR_SFCT_STA - abs(status))); 
     }
 
 }

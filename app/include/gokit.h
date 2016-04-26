@@ -21,7 +21,7 @@ typedef uint8_t MOTOR_T;
 #define MCU_SOFTWARE_VER                        "03000200"
 #define MCU_PRODUCT_KEY                         "6f3074fe43894547a4f1314bd7e3ae0b"
 
-#define MOTOR_DEFAULT_VAL                       5
+#define MOTOR_DEFAULT_VAL                       0
 #define GPIO_KEY_NUM                            2
 #define TEM_RATIO_VER                           1
 #define TEM_ADDITION_VER                        (-13)

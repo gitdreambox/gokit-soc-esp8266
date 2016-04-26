@@ -410,11 +410,11 @@ void ICACHE_FLASH_ATTR gokit_ctl_process(pgcontext pgc, ppacket rx_buf)
                 #ifdef MOTOR_16
                 GAgent_Printf(GAGENT_DEBUG, "########## W2D Control Motor = %d \r\n", gokit_ntohs(read_typedef.motor)); 
                 
-                motor_control((MOTOR_T)gokit_dtc_y(MOT_RATIO_VER, MOT_ADDITION_VER, (uint32)(gokit_ntohs(read_typedef.motor)) - MOT_ADDITION_VER)); 
+                motor_control((_MOTOR_T)gokit_dtc_y(MOT_RATIO_VER, MOT_ADDITION_VER, (uint32)(gokit_ntohs(read_typedef.motor)))); 
                 #else
                 GAgent_Printf(GAGENT_DEBUG, "########## W2D Control Motor = %d \r\n", read_typedef.motor); 
                 
-                motor_control((MOTOR_T)gokit_dtc_y(MOT_RATIO_VER, MOT_ADDITION_VER, (uint32)read_typedef.motor) - MOT_ADDITION_VER); 
+                motor_control((_MOTOR_T)gokit_dtc_y(MOT_RATIO_VER, MOT_ADDITION_VER, (uint32)read_typedef.motor)); 
                 #endif
             }
             
@@ -547,9 +547,9 @@ void ICACHE_FLASH_ATTR gokit_software_init(void)
     memset((uint8_t *)&wirte_typedef, 0, sizeof(write_info_t));
     
     #ifdef MOTOR_16
-    read_typedef.motor = gokit_ntohs((MOTOR_T)MOTOR_DEFAULT_VAL); 
+    read_typedef.motor = gokit_ntohs((uint16_t)gokit_dtc_x(MOT_RATIO_VER, MOT_ADDITION_VER, (uint32)MOTOR_DEFAULT_VAL)); 
     #else
-    read_typedef.motor = MOTOR_DEFAULT_VAL; 
+    read_typedef.motor = (uint8_t)gokit_dtc_x(MOT_RATIO_VER, MOT_ADDITION_VER, (uint32)MOTOR_DEFAULT_VAL); 
     #endif
     
     GAgent_Printf(GAGENT_DEBUG, "gokit software init OK \r\n"); 
