@@ -21,7 +21,6 @@
 #include "driver/uart_register.h"
 #include "mem.h"
 #include "os_type.h"
-#include "gagent.h"
 // UartDev is defined and initialized in rom code.
 extern UartDevice    UartDev;
 
@@ -215,7 +214,7 @@ uart0_rx_intr_handler(void *para)
     /* uart0 and uart1 intr combine togther, when interrupt occur, see reg 0x3ff20020, bit2, bit0 represents
     * uart1 and uart0 respectively
     */
-    static uint32 recv_total_len = 0;
+//    static uint32 recv_total_len = 0;
     uint8 RcvChar;
     uint8 uart_no = UART0;//UartDev.buff_uart_no;
     uint8 fifo_len = 0;
@@ -243,18 +242,18 @@ uart0_rx_intr_handler(void *para)
         for(buf_idx=0;buf_idx<fifo_len;buf_idx++)//接收串口数据
         {
             temp = READ_PERI_REG(UART_FIFO(UART0)) & 0xFF;
-            pgContextData->rtinfo.pRxBuf[recv_total_len+buf_idx] = temp;
+//            pgContextData->rtinfo.pRxBuf[recv_total_len+buf_idx] = temp;
         }
-        recv_total_len += fifo_len;
+//        recv_total_len += fifo_len;
         WRITE_PERI_REG(UART_INT_CLR(UART0), UART_RXFIFO_FULL_INT_CLR|UART_RXFIFO_TOUT_INT_CLR);
         uart_rx_intr_enable(UART0);
-        if(recv_total_len > 1000)
+/*        if(recv_total_len > 1000)
         {
             pgContextData->rtinfo.uart_recv_len = recv_total_len;
             system_os_post( 1, SIG_UART, 0 );
             recv_total_len = 0;
         }
-
+*/
     }
     //接收超时中断
     else if(UART_RXFIFO_TOUT_INT_ST == (READ_PERI_REG(UART_INT_ST(uart_no)) & UART_RXFIFO_TOUT_INT_ST))
@@ -267,13 +266,13 @@ uart0_rx_intr_handler(void *para)
         for(buf_idx=0;buf_idx<fifo_len;buf_idx++)//接收串口数据
         {
             temp = READ_PERI_REG(UART_FIFO(UART0)) & 0xFF;
-            pgContextData->rtinfo.pRxBuf[recv_total_len+buf_idx] = temp;
+//            pgContextData->rtinfo.pRxBuf[recv_total_len+buf_idx] = temp;
         }
-        pgContextData->rtinfo.uart_recv_len = fifo_len+recv_total_len;
+//        pgContextData->rtinfo.uart_recv_len = fifo_len+recv_total_len;
         WRITE_PERI_REG(UART_INT_CLR(UART0), UART_RXFIFO_FULL_INT_CLR|UART_RXFIFO_TOUT_INT_CLR);
         uart_rx_intr_enable(UART0);
-        recv_total_len = 0;
-        system_os_post( 1, SIG_UART, 0 );
+//        recv_total_len = 0;
+//        system_os_post( 1, SIG_UART, 0 );
 
     }
     //发送fifo空中断
@@ -820,29 +819,3 @@ UART_SetPrintPort(uint8 uart_no)
     os_install_putc1(uart0_write_char);
     }
 }
-
-
-//========================================================
-
-
-/*test code*/
-void ICACHE_FLASH_ATTR
-uart_init_2(UartBautRate uart0_br, UartBautRate uart1_br)
-{
-    // rom use 74880 baut_rate, here reinitialize
-    UartDev.baut_rate = uart0_br;
-    UartDev.exist_parity = STICK_PARITY_EN;
-    UartDev.parity = EVEN_BITS;
-    UartDev.stop_bits = ONE_STOP_BIT;
-    UartDev.data_bits = EIGHT_BITS;
-
-    uart_config(UART0);
-    UartDev.baut_rate = uart1_br;
-    uart_config(UART1);
-    ETS_UART_INTR_ENABLE();
-
-    // install uart1 putc callback
-    os_install_putc1((void *)uart1_write_char);//print output at UART1
-}
-
-

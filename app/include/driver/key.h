@@ -1,8 +1,7 @@
-﻿#ifndef __KEY_H__
+#ifndef __KEY_H__
 #define __KEY_H__
 
 #include "gpio.h"
-#include "os_type.h"
 
 typedef void (* key_function)(void);
 

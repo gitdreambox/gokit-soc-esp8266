@@ -34,16 +34,10 @@
 #define CHANNEL_0           0
 #define CHANNEL_1           1
 
-#ifdef MOTOR_16
 typedef int16_t _MOTOR_T;
-#else
-typedef int8_t _MOTOR_T;
-#endif
 
 /* Function declaration */
-void motor_init(void);
-void motor_control(_MOTOR_T status); 
-void motor_sensortest(uint8_t Mocou);
+void motor_init(void); 
 
 #endif /*_HAL_MOTOR_H*/
 

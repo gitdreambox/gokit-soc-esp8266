@@ -1,6 +1,8 @@
 #ifndef __USER_CONFIG_H__
 #define __USER_CONFIG_H__
 
+//#define MEMLEAK_DEBUG
+
 #define ESP_PLATFORM        1
 #define LEWEI_PLATFORM      0
 
@@ -9,7 +11,7 @@
 #if ESP_PLATFORM
 #define PLUG_DEVICE             0
 #define LIGHT_DEVICE            1
-#define SENSOR_DEVICE			0
+#define SENSOR_DEVICE           0
 
 #if SENSOR_DEVICE
 #define HUMITURE_SUB_DEVICE         1

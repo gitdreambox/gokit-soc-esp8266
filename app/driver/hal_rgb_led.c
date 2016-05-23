@@ -14,9 +14,9 @@
 *********************************************************/
 
 #include "driver/hal_rgb_led.h"
-#include "gagent.h"
+#include "osapi.h"
 
-static void rgb_delay(unsigned int  us)
+static void ICACHE_FLASH_ATTR rgb_delay(unsigned int us)
 {
     /* Define your delay function */
     
@@ -26,7 +26,7 @@ static void rgb_delay(unsigned int  us)
 
 
 /************ generation clock *********************/
-static void ClkProduce(void)
+static void ICACHE_FLASH_ATTR ClkProduce(void)
 {
     SCL_LOW;    // SCL=0
     rgb_delay(40); 
@@ -36,7 +36,7 @@ static void ClkProduce(void)
 
 
 /**********  send 32 zero ********************/
-static void send_32zero(void)
+static void ICACHE_FLASH_ATTR send_32zero(void)
 {
     unsigned char i;
     SDA_LOW;   // SDA=0
@@ -46,7 +46,7 @@ static void send_32zero(void)
 
 
 /********* invert the grey value of the first two bits ***************/
-static uint8_t take_anti_code(uint8_t dat)
+static uint8_t ICACHE_FLASH_ATTR take_anti_code(uint8_t dat)
 {
     uint8_t tmp = 0;
 
@@ -56,7 +56,7 @@ static uint8_t take_anti_code(uint8_t dat)
 
 
 /****** send gray data *********/
-static void data_send(uint32 dx)
+static void ICACHE_FLASH_ATTR data_send(uint32 dx)
 {
     uint8_t i;
 
@@ -79,7 +79,7 @@ static void data_send(uint32 dx)
 
 
 /******* data processing  ********************/
-static void data_dealwith_send(uint8_t r, uint8_t g, uint8_t b)
+static void ICACHE_FLASH_ATTR data_dealwith_send(uint8_t r, uint8_t g, uint8_t b)
 {
     uint32 dx = 0; 
 
@@ -96,7 +96,7 @@ static void data_dealwith_send(uint8_t r, uint8_t g, uint8_t b)
 }
 
 
-void rgb_control(uint8_t R, uint8_t G, uint8_t B)
+void ICACHE_FLASH_ATTR rgb_control(uint8_t R, uint8_t G, uint8_t B)
 {
     //contron power
     
@@ -106,19 +106,17 @@ void rgb_control(uint8_t R, uint8_t G, uint8_t B)
 }
 
 
-void rgb_led_init(void)
+void ICACHE_FLASH_ATTR rgb_led_init(void)
 {
     //contron power
 
     send_32zero();
     data_dealwith_send(0, 0, 0);   // display red
     data_dealwith_send(0, 0, 0);
-    
-    rgb_control(0, 0, 0);
 }
 
 
-void rgb_gpio_init(void)
+void ICACHE_FLASH_ATTR rgb_gpio_init(void)
 {
     /* Migrate your driver code */
 
@@ -129,27 +127,27 @@ void rgb_gpio_init(void)
 
     gpio_output_set(0, 0, GPIO_ID_PIN(GPIO_RGB_SCL) | GPIO_ID_PIN(GPIO_RGB_SDA), 0); //| GPIO_ID_PIN(GPIO_RGB_POW)
 
-    GAgent_Printf(GAGENT_DEBUG, "rgb_gpio_init \r\n"); 
+    os_printf("rgb_gpio_init \r\n");
 }
 
-void rgb_sensortest(uint8_t rgbcou)
+void ICACHE_FLASH_ATTR rgb_sensortest(uint8_t rgbcou)
 {
     /* Test LOG model */
 
     if (0 == rgbcou)
     {
         rgb_control(0, 0, 250);
-        GAgent_Printf(GAGENT_CRITICAL, "RGB : B");
+//      GAgent_Printf(GAGENT_CRITICAL, "RGB : B");
     }
     else if (1 == rgbcou)
     {
         rgb_control(0, 250, 0);
-        GAgent_Printf(GAGENT_CRITICAL, "RGB : G");
+//      GAgent_Printf(GAGENT_CRITICAL, "RGB : G");
     }
     else if (2 == rgbcou)
     {
         rgb_control(250, 0, 0);
-        GAgent_Printf(GAGENT_CRITICAL, "RGB : R");
+//      GAgent_Printf(GAGENT_CRITICAL, "RGB : R");
     }
 }
 

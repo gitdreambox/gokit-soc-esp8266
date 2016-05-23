@@ -13,7 +13,7 @@
 *
 *********************************************************/
 #include "driver/hal_key.h"
-#include "gagent.h"
+#include "mem.h"
 
 uint32 key_count_time; 
 
@@ -25,16 +25,16 @@ uint32 key_count_time;
 * Return         : uint8_t KEY state
 * Attention      : None
 *******************************************************************************/
-static uint8_t key_value_read(keys_typedef_t * keys)
+static ICACHE_FLASH_ATTR uint8_t key_value_read(keys_typedef_t * keys)
 {
-    uint8_t read_key;
+    uint8_t read_key = 0;
 
-    if(!GPIO_INPUT_GET(keys->single_key[0]->gpio_id)) 
+    if(!GPIO_INPUT_GET(keys->single_key[0]->gpio_id))
     {
         read_key |= PRESS_KEY1;
     }
 
-    if(!GPIO_INPUT_GET(keys->single_key[1]->gpio_id)) 
+    if(!GPIO_INPUT_GET(keys->single_key[1]->gpio_id))
     {
         read_key |= PRESS_KEY2;
     }
@@ -53,12 +53,12 @@ static uint8_t key_value_read(keys_typedef_t * keys)
 *******************************************************************************/
 static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
 {
-    static uint8_t Key_Check;
-    static uint8_t Key_State;
-    static uint16_t Key_LongCheck;
+    static uint8_t Key_Check = 0;
+    static uint8_t Key_State = 0;
+    static uint16_t Key_LongCheck = 0;
     static uint8_t Key_Prev = 0;     //保存上一次按键
 
-    uint8_t Key_press;
+    uint8_t Key_press = 0;
     uint8_t Key_return = 0;
 
     //累加按键时间
@@ -141,7 +141,7 @@ static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
     return  NO_KEY;
 }
 
-void gokit_key_handle(keys_typedef_t * keys)
+void ICACHE_FLASH_ATTR gokit_key_handle(keys_typedef_t * keys)
 {
     uint8_t key_value = 0;
 
@@ -204,9 +204,9 @@ key_typedef_t * ICACHE_FLASH_ATTR key_init_one(uint8 gpio_id, uint32 gpio_name, 
     return single_key;
 }
 
-void key_para_init(keys_typedef_t * keys)
+void ICACHE_FLASH_ATTR key_para_init(keys_typedef_t * keys)
 {
-    uint8 tem_i; 
+    uint8 tem_i = 0; 
     
     //init key timer 
     os_timer_disarm(&keys->key_10ms); 
@@ -220,14 +220,14 @@ void key_para_init(keys_typedef_t * keys)
         PIN_PULLUP_EN(keys->single_key[tem_i]->gpio_name); 
         GPIO_DIS_OUTPUT(GPIO_ID_PIN(keys->single_key[tem_i]->gpio_id)); 
         
-        GAgent_Printf(GAGENT_DEBUG, "key_gpio%d_init \r\n", keys->key_num + 1); 
+        os_printf("gpio_name %d \r\n", keys->single_key[tem_i]->gpio_id); 
     }
     
     //key timer start
     os_timer_arm(&keys->key_10ms, keys->key_timer_ms, 1); 
 }
 
-void key_sensortest(void)
+void ICACHE_FLASH_ATTR key_sensortest(void)
 {
     /* Test LOG model */
 //  single_key[0] = key_init_one(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,

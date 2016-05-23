@@ -15,7 +15,7 @@
 
 #include "driver/hal_infrared.h"
 #include "driver/gpio16.h"
-#include "gagent.h"
+#include "osapi.h"
 
 bool ICACHE_FLASH_ATTR ir_update_status(void)
 {
@@ -36,12 +36,12 @@ void ICACHE_FLASH_ATTR ir_init(void)
 
     gpio16_input_conf();
     
-    GAgent_Printf(GAGENT_DEBUG, "ir_init \r\n"); 
+    os_printf("ir_init \r\n"); 
 }
 
-void ir_sensortest(void)
+void ICACHE_FLASH_ATTR ir_sensortest(void)
 {
-        /* Test LOG model */
+    /* Test LOG model */
 
-        GAgent_Printf(GAGENT_CRITICAL, "InfIO : %d", ir_update_status());
+    os_printf("InfIO : %d", ir_update_status()); 
 }
