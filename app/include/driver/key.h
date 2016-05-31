@@ -5,7 +5,7 @@
 
 typedef void (* key_function)(void);
 
-struct single_key_param {
+struct singleKey_param {
     uint8 key_level;
     uint8 gpio_id;
     uint8 gpio_func;
@@ -18,10 +18,10 @@ struct single_key_param {
 
 struct keys_param {
     uint8 key_num;
-    struct single_key_param **single_key;
+    struct singleKey_param **singleKey;
 };
 
-struct single_key_param *key_init_single(uint8 gpio_id, uint32 gpio_name, uint8 gpio_func, key_function long_press, key_function short_press);
+struct singleKey_param *key_init_single(uint8 gpio_id, uint32 gpio_name, uint8 gpio_func, key_function long_press, key_function short_press);
 void key_init(struct keys_param *key);
 
 #endif

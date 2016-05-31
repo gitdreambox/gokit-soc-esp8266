@@ -373,6 +373,6 @@ $(foreach image,$(GEN_IMAGES),$(eval $(call MakeImage,$(basename $(image)))))
 # Required for each makefile to inherit from the parent
 #
 
-INCLUDES := $(INCLUDES) -I $(PDIR)include -I $(PDIR)include/$(TARGET) -I $(PDIR)/app/gagent/inc
+INCLUDES := $(INCLUDES) -I $(PDIR)include -I $(PDIR)include/$(TARGET) -I $(PDIR)/app/gagent/inc -I $(PDIR)/app/Gizwits
 PDIR := ../$(PDIR)
 sinclude $(PDIR)Makefile

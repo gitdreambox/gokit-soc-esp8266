@@ -24,8 +24,8 @@
 
 typedef struct
 {
-//  uint8_t pre_tem_means_val;
-//  uint8_t pre_hum_means_val;
+//  uint8_t preTemMeansVal;
+//  uint8_t pretemMeansVal;
     uint8_t th_num;
     uint8_t th_amount; 
     uint8_t th_bufs[10][2];

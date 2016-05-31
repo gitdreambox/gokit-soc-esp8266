@@ -124,7 +124,7 @@ static u8 ICACHE_FLASH_ATTR dht11_read_data(u8 * temperature, u8 * humidity)
 uint8_t ICACHE_FLASH_ATTR dh11_read(uint8_t * temperature, uint8_t * humidity)
 {
     uint8_t curTem = 0, curHum = 0;
-    uint16_t tem_means = 0, hum_means = 0;
+    uint16_t temMeans = 0, hum_means = 0;
     uint8_t cur_i = 0;
     uint8_t ret = 0; 
 
@@ -165,14 +165,14 @@ uint8_t ICACHE_FLASH_ATTR dh11_read(uint8_t * temperature, uint8_t * humidity)
         //Calculate Before ten the mean
         for(cur_i = 0; cur_i < temphum_typedef.th_num; cur_i++)
         {
-            tem_means += temphum_typedef.th_bufs[cur_i][0];
+            temMeans += temphum_typedef.th_bufs[cur_i][0];
             hum_means += temphum_typedef.th_bufs[cur_i][1];
         }
 
-        tem_means = tem_means / temphum_typedef.th_num;
+        temMeans = temMeans / temphum_typedef.th_num;
         hum_means = hum_means / temphum_typedef.th_num; 
         
-        *temperature = tem_means;
+        *temperature = temMeans;
         *humidity = hum_means;
     }
     else if(MEAN_NUM == temphum_typedef.th_amount) 
@@ -180,14 +180,14 @@ uint8_t ICACHE_FLASH_ATTR dh11_read(uint8_t * temperature, uint8_t * humidity)
         //Calculate After ten times the mean
         for(cur_i = 0; cur_i < temphum_typedef.th_amount; cur_i++) 
         {
-            tem_means += temphum_typedef.th_bufs[cur_i][0];
+            temMeans += temphum_typedef.th_bufs[cur_i][0];
             hum_means += temphum_typedef.th_bufs[cur_i][1];
         }
 
-        tem_means = tem_means / temphum_typedef.th_amount; 
+        temMeans = temMeans / temphum_typedef.th_amount; 
         hum_means = hum_means / temphum_typedef.th_amount; 
         
-        *temperature = (uint8_t)tem_means; 
+        *temperature = (uint8_t)temMeans; 
         *humidity = (uint8_t)hum_means; 
     }
 
@@ -201,7 +201,7 @@ u8 ICACHE_FLASH_ATTR dh11_init(void)
 
     hdt11_rst(); 
     
-    memset((uint8_t *)&temphum_typedef, 0, sizeof(th_typedef_t)); 
+    os_memset((uint8_t *)&temphum_typedef, 0, sizeof(th_typedef_t)); 
     
     os_printf("dh11_init \r\n"); 
     

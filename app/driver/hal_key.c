@@ -29,12 +29,12 @@ static ICACHE_FLASH_ATTR uint8_t key_value_read(keys_typedef_t * keys)
 {
     uint8_t read_key = 0;
 
-    if(!GPIO_INPUT_GET(keys->single_key[0]->gpio_id))
+    if(!GPIO_INPUT_GET(keys->singleKey[0]->gpio_id))
     {
         read_key |= PRESS_KEY1;
     }
 
-    if(!GPIO_INPUT_GET(keys->single_key[1]->gpio_id))
+    if(!GPIO_INPUT_GET(keys->singleKey[1]->gpio_id))
     {
         read_key |= PRESS_KEY2;
     }
@@ -153,18 +153,18 @@ void ICACHE_FLASH_ATTR gokit_key_handle(keys_typedef_t * keys)
         if(key_value & PRESS_KEY1)
         {
             //key1 callback function of short press
-            if(keys->single_key[0]->short_press) 
+            if(keys->singleKey[0]->short_press) 
             {
-                keys->single_key[0]->short_press(); 
+                keys->singleKey[0]->short_press(); 
             }
         }
 
         if(key_value & PRESS_KEY2)
         {
             //key2 callback function of short press
-            if(keys->single_key[1]->short_press) 
+            if(keys->singleKey[1]->short_press) 
             {
-                keys->single_key[1]->short_press(); 
+                keys->singleKey[1]->short_press(); 
             }
         }
     }
@@ -174,18 +174,18 @@ void ICACHE_FLASH_ATTR gokit_key_handle(keys_typedef_t * keys)
         if(key_value & PRESS_KEY1)
         {
             //key1 callback function of long press
-            if(keys->single_key[0]->long_press) 
+            if(keys->singleKey[0]->long_press) 
             {
-                keys->single_key[0]->long_press(); 
+                keys->singleKey[0]->long_press(); 
             }
         }
 
         if(key_value & PRESS_KEY2)
         {
             //key2 callback function of long press
-            if(keys->single_key[1]->long_press) 
+            if(keys->singleKey[1]->long_press) 
             {
-                keys->single_key[1]->long_press(); 
+                keys->singleKey[1]->long_press(); 
             }
         }
     }
@@ -193,15 +193,15 @@ void ICACHE_FLASH_ATTR gokit_key_handle(keys_typedef_t * keys)
 
 key_typedef_t * ICACHE_FLASH_ATTR key_init_one(uint8 gpio_id, uint32 gpio_name, uint8 gpio_func, gokit_key_function long_press, gokit_key_function short_press)
 {
-    key_typedef_t * single_key = (key_typedef_t *)os_zalloc(sizeof(key_typedef_t));
+    key_typedef_t * singleKey = (key_typedef_t *)os_zalloc(sizeof(key_typedef_t));
 
-    single_key->gpio_id = gpio_id;
-    single_key->gpio_name = gpio_name;
-    single_key->gpio_func = gpio_func;
-    single_key->long_press = long_press;
-    single_key->short_press = short_press;
+    singleKey->gpio_id = gpio_id;
+    singleKey->gpio_name = gpio_name;
+    singleKey->gpio_func = gpio_func;
+    singleKey->long_press = long_press;
+    singleKey->short_press = short_press;
 
-    return single_key;
+    return singleKey;
 }
 
 void ICACHE_FLASH_ATTR key_para_init(keys_typedef_t * keys)
@@ -215,12 +215,12 @@ void ICACHE_FLASH_ATTR key_para_init(keys_typedef_t * keys)
     //GPIO configured as a high level input mode
     for(tem_i = 0; tem_i < keys->key_num; tem_i++) 
     {
-        PIN_FUNC_SELECT(keys->single_key[tem_i]->gpio_name, keys->single_key[tem_i]->gpio_func); 
-        GPIO_OUTPUT_SET(GPIO_ID_PIN(keys->single_key[tem_i]->gpio_id), 1); 
-        PIN_PULLUP_EN(keys->single_key[tem_i]->gpio_name); 
-        GPIO_DIS_OUTPUT(GPIO_ID_PIN(keys->single_key[tem_i]->gpio_id)); 
+        PIN_FUNC_SELECT(keys->singleKey[tem_i]->gpio_name, keys->singleKey[tem_i]->gpio_func); 
+        GPIO_OUTPUT_SET(GPIO_ID_PIN(keys->singleKey[tem_i]->gpio_id), 1); 
+        PIN_PULLUP_EN(keys->singleKey[tem_i]->gpio_name); 
+        GPIO_DIS_OUTPUT(GPIO_ID_PIN(keys->singleKey[tem_i]->gpio_id)); 
         
-        os_printf("gpio_name %d \r\n", keys->single_key[tem_i]->gpio_id); 
+        os_printf("gpio_name %d \r\n", keys->singleKey[tem_i]->gpio_id); 
     }
     
     //key timer start
@@ -230,13 +230,13 @@ void ICACHE_FLASH_ATTR key_para_init(keys_typedef_t * keys)
 void ICACHE_FLASH_ATTR key_sensortest(void)
 {
     /* Test LOG model */
-//  single_key[0] = key_init_one(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,
-//                                  key1_long_press, key1_short_press);
-//  single_key[1] = key_init_one(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
-//                                  key2_long_press, key2_short_press);
+//  singleKey[0] = key_init_one(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,
+//                                  key1LongPress, key1ShortPress);
+//  singleKey[1] = key_init_one(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
+//                                  key2LongPress, key2ShortPress);
 //  keys.key_num = GPIO_KEY_NUM;
 //  keys.key_timer_ms = 10;
-//  keys.single_key = single_key;
+//  keys.singleKey = singleKey;
 //  key_para_init(&keys);
 }
 

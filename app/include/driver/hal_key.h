@@ -33,7 +33,7 @@ typedef struct
     uint8 key_num;
     os_timer_t key_10ms;
     uint8 key_timer_ms; 
-    key_typedef_t ** single_key; 
+    key_typedef_t ** singleKey; 
 }keys_typedef_t; 
 
 /* Function declaration */

@@ -1,5 +1,5 @@
-#ifndef _GIZWITS_H_
-#define  _GIZWITS_H_
+#ifndef _GIZWITS_PROTOCOL_H
+#define _GIZWITS_PROTOCOL_H
 #include <stdint.h>
 #include "osapi.h"
 #include "user_interface.h"
@@ -8,8 +8,6 @@
 /*****************************************************
 * gokit相关定义
 ******************************************************/
-#define HARDWARE_VERSION                        "03000001"
-#define SOFTWARE_VERSION                        "03000200"
 #define PROTOCOL_VERSION                        "00000001"
 #define P0_VERSION                              "00000001"
 #define PRODUCT_KEY                             "4dd210ab2ce84ba58e72d80efa8947ab"
@@ -34,7 +32,7 @@
 #define TIM_REP_TIMOUT                          (600000 / SOC_TIME_OUT) //600s Regularly report
 #define EKY_PRLONG_TIMOUT                       (10 / SOC_TIME_OUT)     //10 mS De
 #define TH_TIMEOUT                              (1000 / SOC_TIME_OUT)   //Temperature and humidity detection minimum time
-#define INF_TIMEOUT                             (100 / SOC_TIME_OUT)    
+#define INF_TIMEOUT                             (500 / SOC_TIME_OUT)    
 
 /*****************************************************
 * task相关定义
@@ -102,28 +100,30 @@ typedef struct
         uint8_t led_b;
         uint16_t motor_speed; 
     }attr_vals;
-}gizwitsIssued_t;
+}gizwits_issued_t;
 
 //custom
+typedef struct
+{
+    uint8_t led_onoff:1;
+    uint8_t led_color:2;
+    uint8_t reserve:5;
+    uint8_t led_r;
+    uint8_t led_g;
+    uint8_t led_b;
+    int16_t motor;
+    uint8_t infrared;
+    int8_t temperature;
+    uint8_t humidity;
+    uint8_t alert;
+    uint8_t fault;
+}dev_status_t; 
+
 typedef struct 
 {
-    uint8_t reserve;
-    struct
-    {
-        uint8_t led_onoff:1;
-        uint8_t led_color:2;
-        uint8_t reserve:5;
-        uint8_t led_r;
-        uint8_t led_g;
-        uint8_t led_b;
-        uint16_t motor; 
-        uint8_t infrared;
-        uint8_t temperature;
-        uint8_t humidity;
-        uint8_t alert;
-        uint8_t fault; 
-    }dev_status; 
-}gizwitsReport_t;
+    uint8_t action;
+    dev_status_t dev_status;
+}gizwits_report_t;
 
 /*****************************************************
 * WiFi模组工作状态
@@ -206,13 +206,16 @@ typedef struct {
     uint8_t event[EVENT_TYPE_MAX];
 }event_info_t;
 
+uint16_t exchangeBytes(uint16_t value);
+uint32 Y2X(uint32 ratio, int32 addition, uint32 pre_value);
+int32 X2Y(uint32 ratio, int32 addition, uint32 pre_value);
+uint8_t gizRegularlyReportHandle(void);
+uint8_t gizReportJudge(void);
 void gizSetMode(uint8_t mode);
 void gizConfigReset(void);
-int32_t gizIssuedProcess(uint8_t *inData, uint32_t inLen, uint8_t *outData, int32_t *outLen);
+int32_t gizIssuedProcess(uint8_t * inData, uint32_t inLen, uint8_t * outData, int32_t * outLen); 
 int32_t gizReportData(uint8_t action, uint8_t *data, uint32_t len);
 uint32_t gizGetTimeStamp(void);
 void gizwitsInit(void);
-void gizwitsTimerFunc(void); 
-void gizwitsTask(os_event_t *events);
 
 #endif
