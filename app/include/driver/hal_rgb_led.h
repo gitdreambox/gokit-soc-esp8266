@@ -26,10 +26,10 @@
 #define B_MAX                   255
 
 /* Function declaration */
-void rgb_control(uint8_t R, uint8_t B, uint8_t G); 
-void rgb_led_init(void); 
-void rgb_gpio_init(void); 
-void rgb_sensortest(uint8_t rgbcou);
+void rgbControl(uint8_t R, uint8_t B, uint8_t G); 
+void rgbLedInit(void); 
+void rgbGpioInit(void); 
+void rgbSensorTest(uint8_t rgbcou);
 
 #endif /*_HAL_RGB_LED_H*/
 

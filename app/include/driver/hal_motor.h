@@ -37,7 +37,7 @@
 typedef int16_t _MOTOR_T;
 
 /* Function declaration */
-void motor_init(void); 
+void motorInit(void); 
 
 #endif /*_HAL_MOTOR_H*/
 

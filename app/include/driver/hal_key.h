@@ -38,10 +38,10 @@ typedef struct
 
 /* Function declaration */
 
-void gokit_key_handle(keys_typedef_t * keys); 
-key_typedef_t * key_init_one(uint8 gpio_id, uint32 gpio_name, uint8 gpio_func, gokit_key_function long_press, gokit_key_function short_press); 
-void key_para_init(keys_typedef_t * keys);
-void key_sensortest(void); 
+void gokitKeyHandle(keys_typedef_t * keys); 
+key_typedef_t * keyInitOne(uint8 gpio_id, uint32 gpio_name, uint8 gpio_func, gokit_key_function long_press, gokit_key_function short_press); 
+void keyParaInit(keys_typedef_t * keys);
+void keySensorTest(void);
 
 #endif /*_HAL_KEY_H*/
 

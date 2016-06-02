@@ -12,9 +12,9 @@
 #define GET_INF                 GPIO_INPUT_GET(GPIO_ID_PIN(Infrared_GPIO_PIN))
 
 /* Function declaration */
-void ir_init(void);
-bool ir_update_status(void);
-void ir_sensortest(void);
+void irInit(void);
+bool irUpdateStatus(void);
+void irSensorTest(void);
 
 #endif /*_HAL_INFRARED_H*/
 

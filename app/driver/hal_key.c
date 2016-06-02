@@ -15,17 +15,17 @@
 #include "driver/hal_key.h"
 #include "mem.h"
 
-uint32 key_count_time; 
+uint32 keyCountTime; 
 
 /*******************************************************************************
-* Function Name  : key_value_read
+* Function Name  : keyValueRead
 * Description    : Read the KEY state
 * Input          : None
 * Output         : None
 * Return         : uint8_t KEY state
 * Attention      : None
 *******************************************************************************/
-static ICACHE_FLASH_ATTR uint8_t key_value_read(keys_typedef_t * keys)
+static ICACHE_FLASH_ATTR uint8_t keyValueRead(keys_typedef_t * keys)
 {
     uint8_t read_key = 0;
 
@@ -44,14 +44,14 @@ static ICACHE_FLASH_ATTR uint8_t key_value_read(keys_typedef_t * keys)
 
 
 /*******************************************************************************
-* Function Name  : key_state_read
+* Function Name  : keyStateRead
 * Description    : Read the KEY value
 * Input          : None
 * Output         : None
 * Return         : uint8_t KEY value
 * Attention      : None
 *******************************************************************************/
-static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
+static uint8_t ICACHE_FLASH_ATTR keyStateRead(keys_typedef_t * keys)
 {
     static uint8_t Key_Check = 0;
     static uint8_t Key_State = 0;
@@ -62,12 +62,12 @@ static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
     uint8_t Key_return = 0;
 
     //累加按键时间
-    key_count_time++;
+    keyCountTime++;
         
     //KeyCT 1MS+1  按键消抖30MS
-    if(key_count_time >= (30 / keys->key_timer_ms)) 
+    if(keyCountTime >= (30 / keys->key_timer_ms)) 
     {
-        key_count_time = 0; 
+        keyCountTime = 0; 
         Key_Check = 1;
     }
     
@@ -76,7 +76,7 @@ static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
         Key_Check = 0;
         
         //获取当前按键触发值
-        Key_press = key_value_read(keys); 
+        Key_press = keyValueRead(keys); 
         
         switch (Key_State)
         {
@@ -141,11 +141,11 @@ static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
     return  NO_KEY;
 }
 
-void ICACHE_FLASH_ATTR gokit_key_handle(keys_typedef_t * keys)
+void ICACHE_FLASH_ATTR gokitKeyHandle(keys_typedef_t * keys)
 {
     uint8_t key_value = 0;
 
-    key_value = key_state_read(keys); 
+    key_value = keyStateRead(keys); 
 
     //Callback judgment
     if(key_value & KEY_UP)
@@ -191,7 +191,7 @@ void ICACHE_FLASH_ATTR gokit_key_handle(keys_typedef_t * keys)
     }
 }
 
-key_typedef_t * ICACHE_FLASH_ATTR key_init_one(uint8 gpio_id, uint32 gpio_name, uint8 gpio_func, gokit_key_function long_press, gokit_key_function short_press)
+key_typedef_t * ICACHE_FLASH_ATTR keyInitOne(uint8 gpio_id, uint32 gpio_name, uint8 gpio_func, gokit_key_function long_press, gokit_key_function short_press)
 {
     key_typedef_t * singleKey = (key_typedef_t *)os_zalloc(sizeof(key_typedef_t));
 
@@ -204,13 +204,13 @@ key_typedef_t * ICACHE_FLASH_ATTR key_init_one(uint8 gpio_id, uint32 gpio_name, 
     return singleKey;
 }
 
-void ICACHE_FLASH_ATTR key_para_init(keys_typedef_t * keys)
+void ICACHE_FLASH_ATTR keyParaInit(keys_typedef_t * keys)
 {
     uint8 tem_i = 0; 
     
     //init key timer 
     os_timer_disarm(&keys->key_10ms); 
-    os_timer_setfn(&keys->key_10ms, (os_timer_func_t *)gokit_key_handle, keys); 
+    os_timer_setfn(&keys->key_10ms, (os_timer_func_t *)gokitKeyHandle, keys); 
     
     //GPIO configured as a high level input mode
     for(tem_i = 0; tem_i < keys->key_num; tem_i++) 
@@ -227,16 +227,16 @@ void ICACHE_FLASH_ATTR key_para_init(keys_typedef_t * keys)
     os_timer_arm(&keys->key_10ms, keys->key_timer_ms, 1); 
 }
 
-void ICACHE_FLASH_ATTR key_sensortest(void)
+void ICACHE_FLASH_ATTR keySensorTest(void)
 {
     /* Test LOG model */
-//  singleKey[0] = key_init_one(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,
+//  singleKey[0] = keyInitOne(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,
 //                                  key1LongPress, key1ShortPress);
-//  singleKey[1] = key_init_one(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
+//  singleKey[1] = keyInitOne(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
 //                                  key2LongPress, key2ShortPress);
 //  keys.key_num = GPIO_KEY_NUM;
 //  keys.key_timer_ms = 10;
 //  keys.singleKey = singleKey;
-//  key_para_init(&keys);
+//  keyParaInit(&keys);
 }
 

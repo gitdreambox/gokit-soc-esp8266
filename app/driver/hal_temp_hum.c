@@ -18,7 +18,7 @@
 
 th_typedef_t temphum_typedef;
 
-static void ICACHE_FLASH_ATTR temp_hum_delay(unsigned int us)
+static void ICACHE_FLASH_ATTR tempHumDelay(unsigned int us)
 {
     /* Define your delay function */
 
@@ -26,22 +26,22 @@ static void ICACHE_FLASH_ATTR temp_hum_delay(unsigned int us)
 }
 
 //Reset DHT11
-static void ICACHE_FLASH_ATTR hdt11_rst(void)
+static void ICACHE_FLASH_ATTR hdt11Rst(void)
 {
     DHT11_IO_OUT;                                               //SET OUTPUT
     DHT11_OUT_LOW;                                              //GPIOA.0=0
-    temp_hum_delay(18*1000);                                    //Pull down Least 18ms
+    tempHumDelay(18*1000);                                    //Pull down Least 18ms
     DHT11_OUT_HIGH;                                             //GPIOA.0=1
 }
 
-static u8 ICACHE_FLASH_ATTR hdt11_check(void)
+static u8 ICACHE_FLASH_ATTR hdt11Check(void)
 {
     u8 retry=0;
     DHT11_IO_IN;                                                //SET INPUT
     while (DHT11_IN&&retry<100)                                 //DHT11 Pull down 40~80us
     {
         retry++;
-        temp_hum_delay(1);
+        tempHumDelay(1);
     }
 
     if(retry>=100)
@@ -52,7 +52,7 @@ static u8 ICACHE_FLASH_ATTR hdt11_check(void)
     while (!DHT11_IN&&retry<100)                                //DHT11 Pull up 40~80us
     {
         retry++;
-        temp_hum_delay(1);
+        tempHumDelay(1);
     }
 
     if(retry>=100)
@@ -61,23 +61,23 @@ static u8 ICACHE_FLASH_ATTR hdt11_check(void)
     return 0;
 }
 
-static u8 ICACHE_FLASH_ATTR hdt11_read_bit(void)
+static u8 ICACHE_FLASH_ATTR hdt11ReadBit(void)
 {
     u8 retry=0;
     while(DHT11_IN&&retry<100)                                  //wait become Low level
     {
         retry++;
-        temp_hum_delay(1);
+        tempHumDelay(1);
     }
 
     retry=0;
     while(!DHT11_IN&&retry<100)                                 //wait become High level
     {
         retry++;
-        temp_hum_delay(1);
+        tempHumDelay(1);
     }
 
-    temp_hum_delay(40);                                         //wait 40us
+    tempHumDelay(40);                                         //wait 40us
 
     if(DHT11_IN)
         return 1;
@@ -85,29 +85,29 @@ static u8 ICACHE_FLASH_ATTR hdt11_read_bit(void)
         return 0;
 }
 
-static u8 ICACHE_FLASH_ATTR hdt11_read_byte(void)
+static u8 ICACHE_FLASH_ATTR hdt11ReadByte(void)
 {
     u8 i,dat;
     dat=0;
     for (i=0; i<8; i++)
     {
         dat<<=1;
-        dat |= hdt11_read_bit(); 
+        dat |= hdt11ReadBit(); 
     }
 
     return dat;
 }
 
-static u8 ICACHE_FLASH_ATTR dht11_read_data(u8 * temperature, u8 * humidity)
+static u8 ICACHE_FLASH_ATTR dht11ReadData(u8 * temperature, u8 * humidity)
 {
     u8 buf[5];
     u8 i;
-    hdt11_rst(); 
-    if(hdt11_check() == 0) 
+    hdt11Rst(); 
+    if(hdt11Check() == 0) 
     {
         for(i=0; i<5; i++)
         {
-            buf[i] = hdt11_read_byte(); 
+            buf[i] = hdt11ReadByte(); 
         }
         if((buf[0]+buf[1]+buf[2]+buf[3])==buf[4])
         {
@@ -121,14 +121,14 @@ static u8 ICACHE_FLASH_ATTR dht11_read_data(u8 * temperature, u8 * humidity)
     return 0;
 }
 
-uint8_t ICACHE_FLASH_ATTR dh11_read(uint8_t * temperature, uint8_t * humidity)
+uint8_t ICACHE_FLASH_ATTR dh11Read(uint8_t * temperature, uint8_t * humidity)
 {
     uint8_t curTem = 0, curHum = 0;
     uint16_t temMeans = 0, hum_means = 0;
     uint8_t cur_i = 0;
     uint8_t ret = 0; 
 
-    ret = dht11_read_data(&curTem, &curHum);
+    ret = dht11ReadData(&curTem, &curHum);
 
     if(1 != ret) 
     {
@@ -194,27 +194,27 @@ uint8_t ICACHE_FLASH_ATTR dh11_read(uint8_t * temperature, uint8_t * humidity)
     return (0);
 }
 
-u8 ICACHE_FLASH_ATTR dh11_init(void)
+u8 ICACHE_FLASH_ATTR dh11Init(void)
 {
     /* Migrate your driver code */
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
 
-    hdt11_rst(); 
+    hdt11Rst(); 
     
     os_memset((uint8_t *)&temphum_typedef, 0, sizeof(th_typedef_t)); 
     
-    os_printf("dh11_init \r\n"); 
+    os_printf("dh11Init \r\n"); 
     
-    return hdt11_check(); 
+    return hdt11Check(); 
 }
 
-void ICACHE_FLASH_ATTR dh11_sensortest(void)
+void ICACHE_FLASH_ATTR dh11SensorTest(void)
 {
     /* Test LOG model */
 
     uint8_t curTem = 0, curHum = 0; 
     
-    dht11_read_data(&curTem, &curHum); 
+    dht11ReadData(&curTem, &curHum); 
     
     os_printf("Temperature : %d , Humidity : %d", curTem, curHum); 
 }

@@ -23,7 +23,7 @@ gpio16_output_set(uint8 value)
 }
 
 void ICACHE_FLASH_ATTR
-gpio16_input_conf(void)
+gpio16InputConf(void)
 {
     WRITE_PERI_REG(PAD_XPD_DCDC_CONF,
                    (READ_PERI_REG(PAD_XPD_DCDC_CONF) & 0xffffffbc) | (uint32)0x1); 	// mux configuration for XPD_DCDC and rtc_gpio0 connection
@@ -36,7 +36,7 @@ gpio16_input_conf(void)
 }
 
 uint8 ICACHE_FLASH_ATTR
-gpio16_input_get(void)
+gpio16InputGet(void)
 {
     return (uint8)(READ_PERI_REG(RTC_GPIO_IN_DATA) & 1);
 }

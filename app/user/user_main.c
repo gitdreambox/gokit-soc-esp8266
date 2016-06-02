@@ -42,79 +42,63 @@ unsigned int default_private_key_len = 0;
 #define TaskQueueLen    200
 LOCAL  os_event_t   TaskQueue[TaskQueueLen];
 
-#define gizwitsTaskQueueLen    200
-LOCAL  os_event_t   gizwitsTaskQueue[gizwitsTaskQueueLen];
+#define userQueueLen    200
+LOCAL os_event_t userTaskQueue[userQueueLen]; 
 
-LOCAL os_timer_t gizTimer; 
+#define USER_TIME_MS 10
+LOCAL os_timer_t userTimer; 
+
 LOCAL key_typedef_t * singleKey[2];
 LOCAL keys_typedef_t keys; 
-uint8_t gizConfigFlag = 0; 
-extern volatile uint8_t issuedBuf[256];
-extern volatile uint8_t reportBuf[256]; 
-extern volatile uint32_t issuedLen; 
-extern volatile uint32_t reportLen; 
-extern event_info_t issuedProcessEvent; 
 
-LOCAL uint8_t ICACHE_FLASH_ATTR gizThReadHandle(void)
+extern volatile uint8_t reportBuf[256]; 
+
+LOCAL uint8_t ICACHE_FLASH_ATTR gizThHandle(void)
 {
+    static uint16_t thCtime = 0;
     static uint8_t preTemMeansVal = 0;
     static uint8_t pretemMeansVal = 0;
     uint8_t curTem = 0, curHum = 0;
     uint16_t temMeans = 0, hum_means = 0;
     uint8_t ret = 0;
-    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf;
-
-    ret = dh11_read(&curTem, &curHum);
-    if(1 == ret)
-    {
-        os_printf("@@@@ dh11_read error ! \n");
-        return 0;
-    }
-
-    //Being the first time and the initiative to report
-    if((preTemMeansVal == 0) || (pretemMeansVal == 0))
-    {
-        preTemMeansVal = curTem;
-        pretemMeansVal = curHum;
-
-        //Assignment to report data
-        reportData->dev_status.temperature = (uint8_t)Y2X(TEMPERATURE_RATIO, TEMPERATURE_ADDITION, (uint32)preTemMeansVal);
-        reportData->dev_status.humidity = (uint8_t)Y2X(HUMIDITY_RATIO, HUMIDITY_ADDITION, (uint32)pretemMeansVal);
-
-        system_os_post(USER_TASK_PRIO_0, SIG_SET_REPFLAG, 0);
-
-        return (1);
-    }
-
-    //Before and after the two values, it is determined whether or not reported
-    if((preTemMeansVal != curTem) || (pretemMeansVal != curHum))
-    {
-        preTemMeansVal = curTem;
-        pretemMeansVal = curHum;
-
-        //Assignment to report data
-        reportData->dev_status.temperature = (uint8_t)Y2X(TEMPERATURE_RATIO, TEMPERATURE_ADDITION, (uint32)preTemMeansVal);
-        reportData->dev_status.humidity = (uint8_t)Y2X(HUMIDITY_RATIO, HUMIDITY_ADDITION, (uint32)pretemMeansVal);
-
-        system_os_post(USER_TASK_PRIO_0, SIG_SET_REPFLAG, 0);
-
-        return (1);
-    }
-
-    return (0);
-}
-
-LOCAL uint8_t ICACHE_FLASH_ATTR gizThHandle(void)
-{
-    static uint16_t thCtime = 0;
-
+    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf; 
+    
     if(TH_TIMEOUT < thCtime)
     {
         thCtime = 0;
 
-        system_os_post(USER_TASK_PRIO_0, SIG_HD11_READ, 0);
+        ret = dh11Read(&curTem, &curHum);
+        if(1 == ret)
+        {
+            os_printf("@@@@ dh11Read error ! \n");
+            return 0;
+        }
 
-        return (1);
+        //Being the first time and the initiative to report
+        if((preTemMeansVal == 0) || (pretemMeansVal == 0))
+        {
+            preTemMeansVal = curTem;
+            pretemMeansVal = curHum;
+
+            //Assignment to report data
+            reportData->dev_status.temperature = preTemMeansVal;
+            reportData->dev_status.humidity = pretemMeansVal;
+
+            return (1);
+        }
+
+        //Before and after the two values, it is determined whether or not reported
+        if((preTemMeansVal != curTem) || (pretemMeansVal != curHum))
+        {
+            preTemMeansVal = curTem;
+            pretemMeansVal = curHum;
+
+            //Assignment to report data
+            reportData->dev_status.temperature = preTemMeansVal;
+            reportData->dev_status.humidity = pretemMeansVal;
+
+            return (1);
+        }
     }
 
     thCtime++;
@@ -122,36 +106,24 @@ LOCAL uint8_t ICACHE_FLASH_ATTR gizThHandle(void)
     return (0);
 }
 
-LOCAL uint8_t ICACHE_FLASH_ATTR gizIrReadHandle(void)
-{
-    uint8_t irValue = 0;
-    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf;
-
-    irValue = ir_update_status();
-
-    if(irValue != reportData->dev_status.infrared)
-    {
-        reportData->dev_status.infrared = irValue;
-
-        gizImmediateReport();
-
-        return (1);
-    }
-
-    return (0);
-}
-
 LOCAL uint8_t ICACHE_FLASH_ATTR gokitIrHandle(void)
 {
     static uint32 irCtime = 0;
-
+    uint8_t irValue = 0;
+    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf; 
+    
     if(INF_TIMEOUT < irCtime)
     {
         irCtime = 0;
 
-        system_os_post(USER_TASK_PRIO_0, SIG_INFRARED_READ, 0);
+        irValue = irUpdateStatus();
 
-        return (1);
+        if(irValue != reportData->dev_status.infrared)
+        {
+            reportData->dev_status.infrared = irValue;
+
+            return (1);
+        }
     }
 
     irCtime++;
@@ -159,12 +131,27 @@ LOCAL uint8_t ICACHE_FLASH_ATTR gokitIrHandle(void)
     return (0);
 }
 
+LOCAL void ICACHE_FLASH_ATTR user_handle(void)
+{
+    uint8_t ret = 0; 
+    
+    //Temperature and humidity sensors reported conditional
+    ret = gizThHandle();
+
+    //Infrared sensors reported conditional
+    ret = gokitIrHandle(); 
+    
+    if(1 == ret)
+    {
+        gizReportData(ACTION_REPORT_DEV_STATUS, (uint8_t *)&reportBuf, sizeof(gizwits_report_t)); 
+    }
+}
+
 LOCAL void ICACHE_FLASH_ATTR key2ShortPress(void)
 {
     os_printf("#### key2, soft ap mode \n");
 
-    rgb_control(250, 0, 0);
-    gizConfigFlag = 1;
+    rgbControl(250, 0, 0);
 
     gizSetMode(1);
 }
@@ -173,8 +160,7 @@ LOCAL void ICACHE_FLASH_ATTR key2LongPress(void)
 {
     os_printf("#### key2, airlink mode\n");
 
-    rgb_control(0, 250, 0);
-    gizConfigFlag = 1;
+    rgbControl(0, 250, 0);
 
     gizSetMode(2);
 }
@@ -183,7 +169,7 @@ LOCAL void ICACHE_FLASH_ATTR key1ShortPress(void)
 {
     os_printf("#### key1, press \n");
 
-    rgb_control(0, 0, 250);
+    rgbControl(0, 0, 250);
 }
 
 LOCAL void ICACHE_FLASH_ATTR key1LongPress(void)
@@ -193,67 +179,27 @@ LOCAL void ICACHE_FLASH_ATTR key1LongPress(void)
     gizConfigReset();
 }
 
-void ICACHE_FLASH_ATTR gizwitsTimerFunc(void)
+void ICACHE_FLASH_ATTR userTimerFunc(void)
 {
-    //Temperature and humidity sensors reported conditional
-    gizThHandle();
-
-    //Infrared sensors reported conditional
-    gokitIrHandle();
-
-    //Regularly report conditional
-    gizRegularlyReportHandle();
-
-    //Qualifying the initiative to report
-    gizJudgeRpflagHandle();
+    user_handle();
 }
 
-void ICACHE_FLASH_ATTR gizwitsTask(os_event_t * events)
+void ICACHE_FLASH_ATTR gizwitsUserTask(os_event_t * events)
 {
     uint8_t i = 0;
     uint8 vchar = 0;
 
     if(NULL == events)
     {
-        os_printf("!!! gizwitsTask Error \n");
+        os_printf("!!! gizwitsUserTask Error \n"); 
     }
 
     vchar = (uint8)(events->par);
 
     switch(events->sig)
     {
-    case SIG_ISSUED_DATA:
-        gizEventProcess(&issuedProcessEvent, (uint8_t *)issuedBuf);
-
-        //clean event info
-        os_memset((uint8_t *)&issuedProcessEvent, 0, sizeof(event_info_t));
-        break;
-    case SIG_PASSTHROUGH:
-        for(i = 0; i < issuedLen; i++)
-        {
-            os_printf("%x ", issuedBuf[i]);
-        }
-        os_printf("\n");
-        os_memset(issuedBuf, 0, 256);
-        issuedLen = 0;
-        break;
-    case SIG_HD11_READ:
-        gizThReadHandle();
-        break;
-    case SIG_INFRARED_READ:
-        gizIrReadHandle();
-        break;
-    case SIG_REPORT_JUDGMENT:
-        gizReportJudge();
-        break;
-    case SIG_SET_REPFLAG:
-        gizSetRpflag();
-        break;
-    case SIG_CLE_REPFLAG:
-        gizCleanRpflag();
-        break;
-    case SIG_IMM_REPORT:
-        gizImmediateReport();
+//  case SIG_INFRARED_READ:
+//      gizIrReadHandle();
         break;
     default:
         os_printf("---error sig! ---\n");
@@ -306,40 +252,38 @@ void user_init(void)
     //user init
     
     //rgb led init
-    rgb_gpio_init();
-    rgb_led_init();
+    rgbGpioInit();
+    rgbLedInit();
 
     //key init
-    singleKey[0] = key_init_one(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,
+    singleKey[0] = keyInitOne(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,
                                 key1LongPress, key1ShortPress);
-    singleKey[1] = key_init_one(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
+    singleKey[1] = keyInitOne(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
                                 key2LongPress, key2ShortPress);
     keys.key_num = GPIO_KEY_NUM;
     keys.key_timer_ms = 10;
     keys.singleKey = singleKey;
-    key_para_init(&keys);
+    keyParaInit(&keys);
 
     //motor init
-    motor_init();
-    motor_control(MOTOR_SPEED_DEFAULT);
+    motorInit();
+    motorControl(MOTOR_SPEED_DEFAULT);
     
     //temperature and humidity init
-    dh11_init();
+    dh11Init();
 
     //Infrared init
-    ir_init(); 
+    irInit(); 
 
     //gizwits Init
     gizwitsInit(); 
     
     //gokit timer start
-    os_timer_disarm(&gizTimer);
-    os_timer_setfn(&gizTimer, (os_timer_func_t *)gizwitsTimerFunc, NULL);
-    os_timer_arm(&gizTimer, SOC_TIME_OUT, 1); 
+    os_timer_disarm(&userTimer); 
+    os_timer_setfn(&userTimer, (os_timer_func_t *)userTimerFunc, NULL); 
+    os_timer_arm(&userTimer, USER_TIME_MS, 1); 
     
-    system_os_task(gizwitsTask, 0, gizwitsTaskQueue, gizwitsTaskQueueLen);
-
-    system_os_task(gagentProcessRun, 1, TaskQueue, TaskQueueLen);
+    system_os_task(gagentProcessRun, USER_TASK_PRIO_1, TaskQueue, TaskQueueLen); 
     attrs.mBindEnableTime = 0;
     attrs.mDevAttr[0] = 0x00;
     attrs.mDevAttr[1] = 0x00;
@@ -355,6 +299,8 @@ void user_init(void)
     os_memcpy(attrs.mstrProductKey, PRODUCT_KEY, os_strlen(PRODUCT_KEY));
     os_memcpy(attrs.mstrProtocolVer, PROTOCOL_VERSION, os_strlen(PROTOCOL_VERSION));
     gagentInit(attrs);
+    
+    system_os_task(gizwitsUserTask, USER_TASK_PRIO_0, userTaskQueue, userQueueLen); 
     
     os_printf("--- system_free_size = %d ---\n", system_get_free_heap_size()); 
 }

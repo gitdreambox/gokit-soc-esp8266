@@ -17,10 +17,10 @@
 #include "driver/gpio16.h"
 #include "osapi.h"
 
-bool ICACHE_FLASH_ATTR ir_update_status(void)
+bool ICACHE_FLASH_ATTR irUpdateStatus(void)
 {
     //if(GET_INF)
-    if(gpio16_input_get())
+    if(gpio16InputGet())
     {
         return 0;
     }
@@ -30,18 +30,18 @@ bool ICACHE_FLASH_ATTR ir_update_status(void)
     }
 }
 
-void ICACHE_FLASH_ATTR ir_init(void)
+void ICACHE_FLASH_ATTR irInit(void)
 {
     /* Migrate your driver code */
 
-    gpio16_input_conf();
+    gpio16InputConf();
     
-    os_printf("ir_init \r\n"); 
+    os_printf("irInit \r\n"); 
 }
 
-void ICACHE_FLASH_ATTR ir_sensortest(void)
+void ICACHE_FLASH_ATTR irSensorTest(void)
 {
     /* Test LOG model */
 
-    os_printf("InfIO : %d", ir_update_status()); 
+    os_printf("InfIO : %d", irUpdateStatus());
 }

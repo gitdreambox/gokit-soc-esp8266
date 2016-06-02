@@ -1,13 +1,19 @@
 #include "gizwits_protocol.h"
 #include "gagent_external.h"
+#include "mem.h"
 
 volatile uint8_t issuedBuf[256]; 
 volatile uint8_t reportBuf[256]; 
 volatile gizwits_report_t lastReportData;
+volatile gizwits_report_t curReportData; 
 volatile uint32_t issuedLen = 0; 
 volatile uint32_t reportLen = 0; 
 event_info_t issuedProcessEvent;
 uint8_t gizConditionFlag = 0; 
+
+#define gizwitsTaskQueueLen    200
+LOCAL os_event_t gizwitsTaskQueue[gizwitsTaskQueueLen]; 
+LOCAL os_timer_t gizTimer; 
 
 extern void ICACHE_FLASH_ATTR gizEventProcess(event_info_t *info, uint8_t *data);
 
@@ -85,12 +91,12 @@ void ICACHE_FLASH_ATTR mSleep(void)
     }
 }
 
-uint32 gizTimeMs(void)
+uint32 ICACHE_FLASH_ATTR gizTimeMs(void)
 {
     return (system_get_time() / 1000); 
 }
 
-uint32 gizTimeS(void)
+uint32 ICACHE_FLASH_ATTR gizTimeS(void)
 {
     return (system_get_time() / 1000*1000); 
 }
@@ -110,82 +116,6 @@ uint32 ICACHE_FLASH_ATTR gizGetIntervalsMs(uint32 lastRpMs)
     }
 
     return (intervals_ms);
-}
-
-uint8_t ICACHE_FLASH_ATTR gizSetRpflag(void)
-{
-    gizConditionFlag = 1;
-}
-
-uint8_t ICACHE_FLASH_ATTR gizCleanRpflag(void)
-{
-    gizConditionFlag = 0;
-}
-
-uint8_t ICACHE_FLASH_ATTR gizJudgeRpflagHandle(void)
-{
-    if(1 == gizConditionFlag) 
-    {
-        system_os_post(USER_TASK_PRIO_0, SIG_REPORT_JUDGMENT, 0); 
-    }
-}
-
-uint8_t ICACHE_FLASH_ATTR gizImmediateReport(void)
-{
-    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf; 
-    
-    reportData->action = ACTION_REPORT_DEV_STATUS;
-
-    gizReportData(ACTION_REPORT_DEV_STATUS, (uint8_t *)&reportData->dev_status, sizeof(dev_status_t)); 
-    
-    os_printf("$$$$$ report_Imme : [act:%x],[onf:%x],[Col:%x],[R:%d],[G:%d],[B:%d],[mo:%d],[inf:%d],[tem:%d]],[hum:%d] \n",
-              reportData->action, reportData->dev_status.led_onoff, reportData->dev_status.led_color, reportData->dev_status.led_r, reportData->dev_status.led_g,
-              reportData->dev_status.led_b, reportData->dev_status.motor, reportData->dev_status.infrared, reportData->dev_status.temperature, reportData->dev_status.humidity); 
-    
-    return (0);
-}
-
-
-
-uint8_t ICACHE_FLASH_ATTR gizRegularlyReportHandle(void)
-{
-    static uint32 repCtime = 0;
-
-    //600s Regularly report
-    if(TIM_REP_TIMOUT < repCtime) 
-    {
-        repCtime = 0;
-        
-        os_printf("@@@@ gokit_timing report! \n"); 
-        
-        system_os_post(USER_TASK_PRIO_0, SIG_IMM_REPORT, 0); 
-
-        return (1);
-    }
-    
-    repCtime++;
-    
-    return (0);
-}
-
-uint8_t ICACHE_FLASH_ATTR gizReportJudge(void)
-{
-    static uint32 lastReportMs = 0; 
-    
-    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf; 
-    
-    if(MIN_INTERVAL_TIME < gizGetIntervalsMs(lastReportMs))
-    {
-        gizReportData(ACTION_REPORT_DEV_STATUS, (uint8_t *)&reportData->dev_status, sizeof(reportData->dev_status)); 
-        
-        lastReportMs = gizTimeMs(); 
-        
-        system_os_post(USER_TASK_PRIO_0, SIG_CLE_REPFLAG, 0); 
-        
-        return (1); 
-    }
-
-    return (0);
 }
 
 void ICACHE_FLASH_ATTR gizWiFiStatus(uint16_t value)
@@ -415,6 +345,103 @@ void ICACHE_FLASH_ATTR dataPoint2Event(event_info_t * info, gizwits_issued_t * i
     }
 }
 
+int8_t ICACHE_FLASH_ATTR checkReport(gizwits_report_t * cur, gizwits_report_t * last)
+{
+    int8_t ret = 0;
+    static uint32 lastReportMs = 0; 
+    
+    if((NULL == cur) || (NULL == last)) 
+    {
+        os_printf("!!! checkReport Error \n"); 
+
+        return (-1);
+    }
+    
+    if(last->dev_status.led_onoff != cur->dev_status.led_onoff) 
+    {
+        os_printf("led_onoff %d %d\r\n", last->dev_status.led_onoff, cur->dev_status.led_onoff); 
+        ret = 1;
+    }
+    
+    if(last->dev_status.led_color != cur->dev_status.led_color)
+    {
+        os_printf("led_color \r\n"); 
+        ret = 1;
+    }
+    
+    if(last->dev_status.led_r != cur->dev_status.led_r)
+    {
+        os_printf("led_r \r\n"); 
+        ret = 1;
+    }
+    
+    if(last->dev_status.led_g != cur->dev_status.led_g)
+    {
+        os_printf("led_g \r\n"); 
+        ret = 1;
+    }
+    
+    if(last->dev_status.led_b != cur->dev_status.led_b)
+    {
+        os_printf("led_b \r\n"); 
+        ret = 1;
+    }
+    
+    if(last->dev_status.motor != cur->dev_status.motor)
+    {
+        os_printf("motor \r\n"); 
+        ret = 1;
+    }
+    
+    if(last->dev_status.infrared != cur->dev_status.infrared)
+    {
+        os_printf("infrared \r\n"); 
+        ret = 1;
+    }
+    
+    if(last->dev_status.temperature != cur->dev_status.temperature)
+    {
+        if(MIN_INTERVAL_TIME < gizGetIntervalsMs(lastReportMs)) 
+        {
+            os_printf("temperature \r\n"); 
+            lastReportMs = gizTimeMs(); 
+            ret = 1;
+        }
+    }
+    
+    if(last->dev_status.humidity != cur->dev_status.humidity)
+    {
+        if(MIN_INTERVAL_TIME < gizGetIntervalsMs(lastReportMs)) 
+        {
+            os_printf("humidity \r\n"); 
+            lastReportMs = gizTimeMs(); 
+            ret = 1;
+        }
+    }
+    
+    if(last->dev_status.alert != cur->dev_status.alert)
+    {
+        if(MIN_INTERVAL_TIME < gizGetIntervalsMs(lastReportMs)) 
+        {
+            os_printf("alert \r\n"); 
+            lastReportMs = gizTimeMs(); 
+            ret = 1;
+        }
+    }
+    
+    if(last->dev_status.fault != cur->dev_status.fault)
+    {
+        if(MIN_INTERVAL_TIME < gizGetIntervalsMs(lastReportMs)) 
+        {
+            os_printf("fault \r\n"); 
+            lastReportMs = gizTimeMs(); 
+            ret = 1;
+        }
+    }
+    
+    return ret;
+}
+
 void ICACHE_FLASH_ATTR gizSetMode(uint8_t mode)
 {
     gagentConfig(mode);
@@ -443,7 +470,7 @@ int32_t ICACHE_FLASH_ATTR gizIssuedProcess(uint8_t *inData, uint32_t inLen,uint8
             dataPoint2Event((event_info_t *)&issuedProcessEvent, gizIssuedData); 
             issuedDataDTC((gizwits_issued_t *)&issuedBuf, gizIssuedData); 
             
-            system_os_post(USER_TASK_PRIO_0, SIG_ISSUED_DATA, 0); 
+            system_os_post(USER_TASK_PRIO_2, SIG_ISSUED_DATA, 0); 
 
             *outLen = 0; 
             
@@ -466,7 +493,7 @@ int32_t ICACHE_FLASH_ATTR gizIssuedProcess(uint8_t *inData, uint32_t inLen,uint8
             os_memcpy(issuedBuf, &inData[1], inLen-1);
             issuedLen = inLen-1;
             
-            system_os_post(USER_TASK_PRIO_0, SIG_PASSTHROUGH, 0); 
+            system_os_post(USER_TASK_PRIO_2, SIG_PASSTHROUGH, 0); 
             
             *outLen = 0;
 
@@ -480,21 +507,43 @@ int32_t ICACHE_FLASH_ATTR gizIssuedProcess(uint8_t *inData, uint32_t inLen,uint8
     return 0;
 }
 
-int32_t ICACHE_FLASH_ATTR gizReportData(uint8_t action, uint8_t *data, uint32_t len)
+int32_t ICACHE_FLASH_ATTR gizReportData(uint8_t action, uint8_t * data, uint32_t len)
 {
-    uint8_t sendData[256];
+    uint8_t *passReportBuf = NULL;
+    gizwits_report_t * reportData = (gizwits_report_t *)data;
 
-    if(NULL == data) 
+    if(NULL == data)
     {
-        os_printf("!!! gizReportData Error \n"); 
+        os_printf("!!! gizReportData Error \n");
 
         return (-1);
     }
-    
-    sendData[0] = action;
-    reportDataDTC((dev_status_t *)&sendData[1], (dev_status_t *)data); 
 
-    gagentUploadData(sendData, len+1);
+    if(ACTION_REPORT_DEV_STATUS == action)
+    {
+        reportDataDTC((dev_status_t *)&curReportData.dev_status, (dev_status_t *)&(reportData->dev_status));
+
+        //Regularly report conditional
+        if((1 == checkReport((gizwits_report_t *)&curReportData, (gizwits_report_t *)&lastReportData)))
+        {
+            os_memcpy((uint8_t *)&lastReportData, (uint8_t *)&curReportData, sizeof(gizwits_report_t));
+            lastReportData.action = action;
+
+            os_printf("changed, report data\r\n");
+            system_os_post(USER_TASK_PRIO_2, SIG_IMM_REPORT, 0);
+        }
+    }
+    else if(ACTION_D2W_PASSTHROUGH == action)
+    {
+        passReportBuf = (uint8 * )os_malloc(len + 1);
+        
+        passReportBuf[0] = action;
+        os_memcpy((uint8_t *)&passReportBuf[1], data, len); 
+
+        gagentUploadData(passReportBuf, len+1);
+        
+        os_free(passReportBuf);
+    }
 
     return 0;
 }
@@ -508,15 +557,75 @@ uint32_t ICACHE_FLASH_ATTR gizGetTimeStamp(void)
     return tmValue.ntp;
 }
 
+void ICACHE_FLASH_ATTR gizwitsTimerFunc(void)
+{
+    static uint32 repCtime = 0; 
+
+    //600s Regularly report
+    if(TIM_REP_TIMOUT < repCtime)
+    {
+        repCtime = 0;
+
+        os_printf("@@@@ gokit_timing report! \n");
+
+        system_os_post(USER_TASK_PRIO_2, SIG_IMM_REPORT, 0);
+    }
+
+    repCtime++; 
+}
+
+void ICACHE_FLASH_ATTR gizwitsTask(os_event_t * events)
+{
+    uint8_t i = 0;
+    uint8 vchar = 0;
+
+    if(NULL == events)
+    {
+        os_printf("!!! gizwitsTask Error \n");
+    }
+
+    vchar = (uint8)(events->par);
+
+    switch(events->sig)
+    {
+    case SIG_ISSUED_DATA:
+        gizEventProcess(&issuedProcessEvent, (uint8_t *)issuedBuf);
+
+        //clean event info
+        os_memset((uint8_t *)&issuedProcessEvent, 0, sizeof(event_info_t));
+        break;
+    case SIG_PASSTHROUGH:
+        for(i = 0; i < issuedLen; i++)
+        {
+            os_printf("%x ", issuedBuf[i]);
+        }
+        os_printf("\n");
+        os_memset(issuedBuf, 0, 256);
+        issuedLen = 0;
+        break;
+    case SIG_IMM_REPORT:
+        gagentUploadData((uint8_t *)&lastReportData, sizeof(gizwits_report_t)); 
+        break;
+    default:
+        os_printf("---error sig! ---\n");
+        break;
+    }
+}
+
 void ICACHE_FLASH_ATTR gizwitsInit(void)
 {
-    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf; 
-    
     os_memset(issuedBuf, 0, sizeof(issuedBuf)); 
     os_memset(reportBuf, 0, sizeof(reportBuf)); 
     issuedLen = 0;
     reportLen = 0;
         
+    system_os_task(gizwitsTask, USER_TASK_PRIO_2, gizwitsTaskQueue, gizwitsTaskQueueLen); 
+    
+    //gokit timer start
+    os_timer_disarm(&gizTimer);
+    os_timer_setfn(&gizTimer, (os_timer_func_t *)gizwitsTimerFunc, NULL);
+    os_timer_arm(&gizTimer, MAX_SOC_TIMOUT, 1); 
+    
     os_printf("gizwitsInit OK \r\n"); 
 }
 

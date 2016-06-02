@@ -27,11 +27,10 @@
 * 定时器相关状态
 ******************************************************/
 #define SOC_TIME_OUT                            10
-#define MIN_INTERVAL_TIME                       2000                    //The minimum interval for sending
-#define MAX_SOC_TIMOUT                          (1000 / SOC_TIME_OUT)   //1s
-#define TIM_REP_TIMOUT                          (600000 / SOC_TIME_OUT) //600s Regularly report
-#define EKY_PRLONG_TIMOUT                       (10 / SOC_TIME_OUT)     //10 mS De
-#define TH_TIMEOUT                              (1000 / SOC_TIME_OUT)   //Temperature and humidity detection minimum time
+#define MIN_INTERVAL_TIME                       2000                        //The minimum interval for sending
+#define MAX_SOC_TIMOUT                          1000                        //1s
+#define TIM_REP_TIMOUT                          (600000 / MAX_SOC_TIMOUT)   //600s Regularly report
+#define TH_TIMEOUT                              (1000 / SOC_TIME_OUT)       //Temperature and humidity detection minimum time
 #define INF_TIMEOUT                             (500 / SOC_TIME_OUT)    
 
 /*****************************************************
@@ -39,12 +38,6 @@
 ******************************************************/
 #define SIG_ISSUED_DATA                         0x01
 #define SIG_PASSTHROUGH                         0x02
-#define SIG_HD11_READ                           0x03
-#define SIG_INFRARED_READ                       0x04
-#define SIG_REPORT_TMIMING                      0x05
-#define SIG_REPORT_JUDGMENT                     0x06
-#define SIG_SET_REPFLAG                         0x07
-#define SIG_CLE_REPFLAG                         0x08
 #define SIG_IMM_REPORT                          0x09
 
 /*****************************************************
@@ -78,31 +71,30 @@
 
 #pragma pack(1)
 
-//custom
-typedef struct 
+//对应协议“4.10 WiFi模组控制设备”中的“标志位(attr_flags)”
+typedef struct
 {
-    struct 
-    {
-        uint8_t led_onoff:1;
-        uint8_t led_color:1;
-        uint8_t led_r:1;
-        uint8_t led_g:1;
-        uint8_t led_b:1;
-        uint8_t motor:1;
-    }attr_flags;
-    struct 
-    {
-        uint8_t led_onoff:1;
-        uint8_t led_color:2;
-        uint8_t reserve:5;
-        uint8_t led_r;
-        uint8_t led_g;
-        uint8_t led_b;
-        uint16_t motor_speed; 
-    }attr_vals;
-}gizwits_issued_t;
+    uint8_t led_onoff:1;
+    uint8_t led_color:1;
+    uint8_t led_r:1;
+    uint8_t led_g:1;
+    uint8_t led_b:1;
+    uint8_t motor:1;
+}gizwits_attr_flags; 
 
-//custom
+//对应协议“4.10 WiFi模组控制设备”中的“数据值(attr_vals) ”
+typedef struct
+{
+    uint8_t led_onoff:1;
+    uint8_t led_color:2;
+    uint8_t reserve:5;
+    uint8_t led_r;
+    uint8_t led_g;
+    uint8_t led_b;
+    uint16_t motor_speed;
+}gizwits_attr_vals; 
+
+//对应协议“4.9 设备MCU向WiFi模组主动上报当前状态”
 typedef struct
 {
     uint8_t led_onoff:1;
@@ -118,6 +110,12 @@ typedef struct
     uint8_t alert;
     uint8_t fault;
 }dev_status_t; 
+
+typedef struct 
+{
+    gizwits_attr_flags attr_flags; 
+    gizwits_attr_vals attr_vals; 
+}gizwits_issued_t;
 
 typedef struct 
 {
@@ -209,8 +207,6 @@ typedef struct {
 uint16_t exchangeBytes(uint16_t value);
 uint32 Y2X(uint32 ratio, int32 addition, uint32 pre_value);
 int32 X2Y(uint32 ratio, int32 addition, uint32 pre_value);
-uint8_t gizRegularlyReportHandle(void);
-uint8_t gizReportJudge(void);
 void gizSetMode(uint8_t mode);
 void gizConfigReset(void);
 int32_t gizIssuedProcess(uint8_t * inData, uint32_t inLen, uint8_t * outData, int32_t * outLen); 
