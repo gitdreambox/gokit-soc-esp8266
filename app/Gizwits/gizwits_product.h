@@ -7,6 +7,7 @@
 
 #define HARDWARE_VERSION                        "03000001"
 #define SOFTWARE_VERSION                        "03000200"
+#define SDK_VERSION                             "11"
 
 #ifndef SOFTWARE_VERSION
     #error "no define SOFTWARE_VERSION"
@@ -16,6 +17,6 @@
     #error "no define HARDWARE_VERSION"
 #endif
 
-void gizEventProcess(event_info_t * info, uint8_t * data);
+void gizEventProcess(event_info_t * info, uint8_t * data, uint32_t len);
 
 #endif

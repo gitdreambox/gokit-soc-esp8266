@@ -17,11 +17,8 @@
 #include "user_webserver.h"
 #include "gagent_external.h"
 #include "gizwits_product.h"
+
 #include "driver/hal_key.h"
-#include "driver/hal_infrared.h"
-#include "driver/hal_motor.h"
-#include "driver/hal_rgb_led.h"
-#include "driver/hal_temp_hum.h"
 
 #if ESP_PLATFORM
 #include "user_esp_platform.h"
@@ -43,115 +40,42 @@ unsigned int default_private_key_len = 0;
 LOCAL  os_event_t   TaskQueue[TaskQueueLen];
 
 #define userQueueLen    200
-LOCAL os_event_t userTaskQueue[userQueueLen]; 
+LOCAL os_event_t userTaskQueue[userQueueLen];
 
-#define USER_TIME_MS 10
-LOCAL os_timer_t userTimer; 
+#define USER_TIME_MS 6000
+LOCAL os_timer_t userTimer;
 
-LOCAL key_typedef_t * singleKey[2];
-LOCAL keys_typedef_t keys; 
+/*****************************************************
+ * * I/O相关定义
+ * ******************************************************/
+#define GPIO_KEY_NUM                            2
+#define KEY_0_IO_MUX                            PERIPHS_IO_MUX_GPIO0_U
+#define KEY_0_IO_NUM                            0
+#define KEY_0_IO_FUNC                           FUNC_GPIO0
 
-extern volatile uint8_t reportBuf[256]; 
+#define KEY_1_IO_MUX                            PERIPHS_IO_MUX_MTMS_U
+#define KEY_1_IO_NUM                            14
+#define KEY_1_IO_FUNC                           FUNC_GPIO14
 
-LOCAL uint8_t ICACHE_FLASH_ATTR gizThHandle(void)
-{
-    static uint16_t thCtime = 0;
-    static uint8_t preTemMeansVal = 0;
-    static uint8_t pretemMeansVal = 0;
-    uint8_t curTem = 0, curHum = 0;
-    uint16_t temMeans = 0, hum_means = 0;
-    uint8_t ret = 0;
-    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf; 
-    
-    if(TH_TIMEOUT < thCtime)
-    {
-        thCtime = 0;
+LOCAL key_typedef_t * singleKey[GPIO_KEY_NUM];
+LOCAL keys_typedef_t keys;
 
-        ret = dh11Read(&curTem, &curHum);
-        if(1 == ret)
-        {
-            os_printf("@@@@ dh11Read error ! \n");
-            return 0;
-        }
-
-        //Being the first time and the initiative to report
-        if((preTemMeansVal == 0) || (pretemMeansVal == 0))
-        {
-            preTemMeansVal = curTem;
-            pretemMeansVal = curHum;
-
-            //Assignment to report data
-            reportData->dev_status.temperature = preTemMeansVal;
-            reportData->dev_status.humidity = pretemMeansVal;
-
-            return (1);
-        }
-
-        //Before and after the two values, it is determined whether or not reported
-        if((preTemMeansVal != curTem) || (pretemMeansVal != curHum))
-        {
-            preTemMeansVal = curTem;
-            pretemMeansVal = curHum;
-
-            //Assignment to report data
-            reportData->dev_status.temperature = preTemMeansVal;
-            reportData->dev_status.humidity = pretemMeansVal;
-
-            return (1);
-        }
-    }
-
-    thCtime++;
-
-    return (0);
-}
-
-LOCAL uint8_t ICACHE_FLASH_ATTR gokitIrHandle(void)
-{
-    static uint32 irCtime = 0;
-    uint8_t irValue = 0;
-    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf; 
-    
-    if(INF_TIMEOUT < irCtime)
-    {
-        irCtime = 0;
-
-        irValue = irUpdateStatus();
-
-        if(irValue != reportData->dev_status.infrared)
-        {
-            reportData->dev_status.infrared = irValue;
-
-            return (1);
-        }
-    }
-
-    irCtime++;
-
-    return (0);
-}
+//extern volatile uint8_t reportBuf[256];
 
 LOCAL void ICACHE_FLASH_ATTR user_handle(void)
 {
-    uint8_t ret = 0; 
-    
-    //Temperature and humidity sensors reported conditional
-    ret = gizThHandle();
+    /*
+    //gizReportData() demo
+    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf;
 
-    //Infrared sensors reported conditional
-    ret = gokitIrHandle(); 
-    
-    if(1 == ret)
-    {
-        gizReportData(ACTION_REPORT_DEV_STATUS, (uint8_t *)&reportBuf, sizeof(gizwits_report_t)); 
-    }
+    reportData->dev_status.infrared = irValue;
+    gizReportData(ACTION_REPORT_DEV_STATUS, (uint8_t *)&reportBuf, sizeof(gizwits_report_t));
+    */
 }
 
 LOCAL void ICACHE_FLASH_ATTR key2ShortPress(void)
 {
     os_printf("#### key2, soft ap mode \n");
-
-    rgbControl(250, 0, 0);
 
     gizSetMode(1);
 }
@@ -160,16 +84,12 @@ LOCAL void ICACHE_FLASH_ATTR key2LongPress(void)
 {
     os_printf("#### key2, airlink mode\n");
 
-    rgbControl(0, 250, 0);
-
     gizSetMode(2);
 }
 
 LOCAL void ICACHE_FLASH_ATTR key1ShortPress(void)
 {
     os_printf("#### key1, press \n");
-
-    rgbControl(0, 0, 250);
 }
 
 LOCAL void ICACHE_FLASH_ATTR key1LongPress(void)
@@ -207,6 +127,19 @@ void ICACHE_FLASH_ATTR gizwitsUserTask(os_event_t * events)
     }
 }
 
+void ICACHE_FLASH_ATTR keyInit(void)
+{
+    //key init
+    singleKey[0] = keyInitOne(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,
+                                key1LongPress, key1ShortPress);
+    singleKey[1] = keyInitOne(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
+                                key2LongPress, key2ShortPress);
+    keys.key_num = GPIO_KEY_NUM;
+    keys.key_timer_ms = 10;
+    keys.singleKey = singleKey;
+    keyParaInit(&keys);
+}
+
 /******************************************************************************
  * FunctionName : user_init
  * Description  : entry of user application, init user function here
@@ -221,8 +154,10 @@ void user_init(void)
     wifi_station_set_auto_connect(1);
     wifi_set_sleep_type(NONE_SLEEP_T);//set none sleep mode
     espconn_tcp_set_max_con(10);
-    uart_init_3(9600,115200);
+
     UART_SetPrintPort(1);
+    uart_init_3(9600,115200);
+
     os_printf( "---------------SDK version:%s--------------\n", system_get_sdk_version());
     os_printf( "system_get_free_heap_size=%d\n",system_get_free_heap_size());
 
@@ -248,42 +183,15 @@ void user_init(void)
     {
         os_printf( "---UPGRADE_FW_BIN2---\n");
     }
-    
+
     //user init
-    
-    //rgb led init
-    rgbGpioInit();
-    rgbLedInit();
-
-    //key init
-    singleKey[0] = keyInitOne(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,
-                                key1LongPress, key1ShortPress);
-    singleKey[1] = keyInitOne(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
-                                key2LongPress, key2ShortPress);
-    keys.key_num = GPIO_KEY_NUM;
-    keys.key_timer_ms = 10;
-    keys.singleKey = singleKey;
-    keyParaInit(&keys);
-
-    //motor init
-    motorInit();
-    motorControl(MOTOR_SPEED_DEFAULT);
-    
-    //temperature and humidity init
-    dh11Init();
-
-    //Infrared init
-    irInit(); 
+    keyInit();
 
     //gizwits Init
-    gizwitsInit(); 
-    
-    //gokit timer start
-    os_timer_disarm(&userTimer); 
-    os_timer_setfn(&userTimer, (os_timer_func_t *)userTimerFunc, NULL); 
-    os_timer_arm(&userTimer, USER_TIME_MS, 1); 
-    
-    system_os_task(gagentProcessRun, USER_TASK_PRIO_1, TaskQueue, TaskQueueLen); 
+    gizwitsInit();
+
+    system_os_task(gagentProcessRun, USER_TASK_PRIO_1, TaskQueue, TaskQueueLen);
+
     attrs.mBindEnableTime = 0;
     attrs.mDevAttr[0] = 0x00;
     attrs.mDevAttr[1] = 0x00;
@@ -298,10 +206,16 @@ void user_init(void)
     os_memcpy(attrs.mstrP0Ver, P0_VERSION, os_strlen(P0_VERSION));
     os_memcpy(attrs.mstrProductKey, PRODUCT_KEY, os_strlen(PRODUCT_KEY));
     os_memcpy(attrs.mstrProtocolVer, PROTOCOL_VERSION, os_strlen(PROTOCOL_VERSION));
+    os_memcpy(attrs.mstrSdkVerLow, SDK_VERSION, os_strlen(SDK_VERSION));
     gagentInit(attrs);
-    
-    system_os_task(gizwitsUserTask, USER_TASK_PRIO_0, userTaskQueue, userQueueLen); 
-    
-    os_printf("--- system_free_size = %d ---\n", system_get_free_heap_size()); 
+
+    system_os_task(gizwitsUserTask, USER_TASK_PRIO_0, userTaskQueue, userQueueLen);
+
+    //gokit timer start
+    os_timer_disarm(&userTimer);
+    os_timer_setfn(&userTimer, (os_timer_func_t *)userTimerFunc, NULL);
+    os_timer_arm(&userTimer, USER_TIME_MS, 1);
+
+    os_printf("--- system_free_size = %d ---\n", system_get_free_heap_size());
 }
 

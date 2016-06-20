@@ -10,18 +10,9 @@
 ******************************************************/
 #define PROTOCOL_VERSION                        "00000001"
 #define P0_VERSION                              "00000001"
-#define PRODUCT_KEY                             "4dd210ab2ce84ba58e72d80efa8947ab"
+#define PRODUCT_KEY                             "6f3074fe43894547a4f1314bd7e3ae0b"
 
-/*****************************************************
-* I/O相关定义
-******************************************************/
-#define KEY_0_IO_MUX                            PERIPHS_IO_MUX_GPIO0_U
-#define KEY_0_IO_NUM                            0
-#define KEY_0_IO_FUNC                           FUNC_GPIO0
-
-#define KEY_1_IO_MUX                            PERIPHS_IO_MUX_MTMS_U
-#define KEY_1_IO_NUM                            14
-#define KEY_1_IO_FUNC                           FUNC_GPIO14
+#define BUFFER_LEN_MAX                          900
 
 /*****************************************************
 * 定时器相关状态
@@ -31,7 +22,7 @@
 #define MAX_SOC_TIMOUT                          1000                        //1s
 #define TIM_REP_TIMOUT                          (600000 / MAX_SOC_TIMOUT)   //600s Regularly report
 #define TH_TIMEOUT                              (1000 / SOC_TIME_OUT)       //Temperature and humidity detection minimum time
-#define INF_TIMEOUT                             (500 / SOC_TIME_OUT)    
+#define INF_TIMEOUT                             (500 / SOC_TIME_OUT)
 
 /*****************************************************
 * task相关定义
@@ -43,8 +34,6 @@
 /*****************************************************
 * 数据点相关定义
 ******************************************************/
-#define GPIO_KEY_NUM                            2
-
 #define LED_R_RATIO                             1
 #define LED_R_ADDITION                          0
 #define LED_R_DEFAULT                           0
@@ -80,7 +69,7 @@ typedef struct
     uint8_t led_g:1;
     uint8_t led_b:1;
     uint8_t motor:1;
-}gizwits_attr_flags; 
+}gizwits_attr_flags;
 
 //对应协议“4.10 WiFi模组控制设备”中的“数据值(attr_vals) ”
 typedef struct
@@ -92,7 +81,7 @@ typedef struct
     uint8_t led_g;
     uint8_t led_b;
     uint16_t motor_speed;
-}gizwits_attr_vals; 
+}gizwits_attr_vals;
 
 //对应协议“4.9 设备MCU向WiFi模组主动上报当前状态”
 typedef struct
@@ -122,6 +111,7 @@ typedef struct
     uint8_t action;
     dev_status_t dev_status;
 }gizwits_report_t;
+
 
 /*****************************************************
 * WiFi模组工作状态
@@ -198,18 +188,28 @@ typedef enum
     ACTION_D2W_PASSTHROUGH                      = 0x06,
 } action_type_t;
 
-//custom
 typedef struct {
     uint8_t num;
     uint8_t event[EVENT_TYPE_MAX];
 }event_info_t;
+
+typedef struct
+{
+    uint8_t issuedTransparentBuf[BUFFER_LEN_MAX];
+    uint32_t issuedTransparentLen;
+    gizwits_report_t lastReportData;
+    gizwits_issued_t issuedData;
+    event_info_t processEvent;
+}gizwits_protocol_t;
+
+extern gizwits_protocol_t gizwitsProtocol;
 
 uint16_t exchangeBytes(uint16_t value);
 uint32 Y2X(uint32 ratio, int32 addition, uint32 pre_value);
 int32 X2Y(uint32 ratio, int32 addition, uint32 pre_value);
 void gizSetMode(uint8_t mode);
 void gizConfigReset(void);
-int32_t gizIssuedProcess(uint8_t * inData, uint32_t inLen, uint8_t * outData, int32_t * outLen); 
+int32_t gizIssuedProcess(uint8_t * inData, uint32_t inLen, uint8_t * outData, int32_t * outLen);
 int32_t gizReportData(uint8_t action, uint8_t *data, uint32_t len);
 uint32_t gizGetTimeStamp(void);
 void gizwitsInit(void);
