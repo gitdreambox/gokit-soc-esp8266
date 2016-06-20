@@ -8,10 +8,6 @@
  * Modification history:
  *     2014/1/1, v1.0 create this file.
 *******************************************************************************/
-
-#include "gagent.h"
-#include "gagent_typedef.h"
-
 #include "ets_sys.h"
 #include "osapi.h"
 
@@ -19,8 +15,13 @@
 
 #include "user_devicefind.h"
 #include "user_webserver.h"
-
-#include "gokit.h"
+#include "gagent_external.h"
+#include "gizwits_product.h"
+#include "driver/hal_key.h"
+#include "driver/hal_infrared.h"
+#include "driver/hal_motor.h"
+#include "driver/hal_rgb_led.h"
+#include "driver/hal_temp_hum.h"
 
 #if ESP_PLATFORM
 #include "user_esp_platform.h"
@@ -38,64 +39,171 @@ unsigned int default_private_key_len = 0;
 #endif
 #endif
 
-extern pgcontext pgContextData;
-
 #define TaskQueueLen    200
 LOCAL  os_event_t   TaskQueue[TaskQueueLen];
 
-void ICACHE_FLASH_ATTR user_rf_pre_init(void)
+#define userQueueLen    200
+LOCAL os_event_t userTaskQueue[userQueueLen]; 
+
+#define USER_TIME_MS 10
+LOCAL os_timer_t userTimer; 
+
+LOCAL key_typedef_t * singleKey[2];
+LOCAL keys_typedef_t keys; 
+
+extern volatile uint8_t reportBuf[256]; 
+
+LOCAL uint8_t ICACHE_FLASH_ATTR gizThHandle(void)
 {
+    static uint16_t thCtime = 0;
+    static uint8_t preTemMeansVal = 0;
+    static uint8_t pretemMeansVal = 0;
+    uint8_t curTem = 0, curHum = 0;
+    uint16_t temMeans = 0, hum_means = 0;
+    uint8_t ret = 0;
+    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf; 
+    
+    if(TH_TIMEOUT < thCtime)
+    {
+        thCtime = 0;
+
+        ret = dh11Read(&curTem, &curHum);
+        if(1 == ret)
+        {
+            os_printf("@@@@ dh11Read error ! \n");
+            return 0;
+        }
+
+        //Being the first time and the initiative to report
+        if((preTemMeansVal == 0) || (pretemMeansVal == 0))
+        {
+            preTemMeansVal = curTem;
+            pretemMeansVal = curHum;
+
+            //Assignment to report data
+            reportData->dev_status.temperature = preTemMeansVal;
+            reportData->dev_status.humidity = pretemMeansVal;
+
+            return (1);
+        }
+
+        //Before and after the two values, it is determined whether or not reported
+        if((preTemMeansVal != curTem) || (pretemMeansVal != curHum))
+        {
+            preTemMeansVal = curTem;
+            pretemMeansVal = curHum;
+
+            //Assignment to report data
+            reportData->dev_status.temperature = preTemMeansVal;
+            reportData->dev_status.humidity = pretemMeansVal;
+
+            return (1);
+        }
+    }
+
+    thCtime++;
+
+    return (0);
 }
 
-void ICACHE_FLASH_ATTR
-dataHandle_task(os_event_t *events)
+LOCAL uint8_t ICACHE_FLASH_ATTR gokitIrHandle(void)
 {
-    uint32 start_addr;
-    uint16 GAgentstatus = 0;
-    uint8 vchar=(uint8)(events->par);
+    static uint32 irCtime = 0;
+    uint8_t irValue = 0;
+    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf; 
+    
+    if(INF_TIMEOUT < irCtime)
+    {
+        irCtime = 0;
+
+        irValue = irUpdateStatus();
+
+        if(irValue != reportData->dev_status.infrared)
+        {
+            reportData->dev_status.infrared = irValue;
+
+            return (1);
+        }
+    }
+
+    irCtime++;
+
+    return (0);
+}
+
+LOCAL void ICACHE_FLASH_ATTR user_handle(void)
+{
+    uint8_t ret = 0; 
+    
+    //Temperature and humidity sensors reported conditional
+    ret = gizThHandle();
+
+    //Infrared sensors reported conditional
+    ret = gokitIrHandle(); 
+    
+    if(1 == ret)
+    {
+        gizReportData(ACTION_REPORT_DEV_STATUS, (uint8_t *)&reportBuf, sizeof(gizwits_report_t)); 
+    }
+}
+
+LOCAL void ICACHE_FLASH_ATTR key2ShortPress(void)
+{
+    os_printf("#### key2, soft ap mode \n");
+
+    rgbControl(250, 0, 0);
+
+    gizSetMode(1);
+}
+
+LOCAL void ICACHE_FLASH_ATTR key2LongPress(void)
+{
+    os_printf("#### key2, airlink mode\n");
+
+    rgbControl(0, 250, 0);
+
+    gizSetMode(2);
+}
+
+LOCAL void ICACHE_FLASH_ATTR key1ShortPress(void)
+{
+    os_printf("#### key1, press \n");
+
+    rgbControl(0, 0, 250);
+}
+
+LOCAL void ICACHE_FLASH_ATTR key1LongPress(void)
+{
+    os_printf("#### key1, default setup\n");
+    mSleep();
+    gizConfigReset();
+}
+
+void ICACHE_FLASH_ATTR userTimerFunc(void)
+{
+    user_handle();
+}
+
+void ICACHE_FLASH_ATTR gizwitsUserTask(os_event_t * events)
+{
+    uint8_t i = 0;
+    uint8 vchar = 0;
+
+    if(NULL == events)
+    {
+        os_printf("!!! gizwitsUserTask Error \n"); 
+    }
+
+    vchar = (uint8)(events->par);
+
     switch(events->sig)
     {
-        case SIG_UART:
-            GAgent_Local_Handle( pgContextData, pgContextData->rtinfo.UartRxbuf, GAGENT_BUF_LEN );
-            break;
-        case SIG_TCP:
-            GAgent_Lan_Handle( pgContextData, pgContextData->rtinfo.TcpRxbuf , GAGENT_BUF_LEN );
-            break;
-        case SIG_UDP:
-            Lan_udpDataHandle(pgContextData, pgContextData->rtinfo.Rxbuf , GAGENT_BUF_LEN );
-            break;
-        case SIG_CLOUD_HTTP:
-            Cloud_ConfigDataHandle( pgContextData );
-            break;
-        case SIG_CLOUD_M2M:
-//            if( 0 == pgContextData->rtinfo.isOtaRunning ||
-//                RET_SUCCESS == pgContextData->rtinfo.m2mDnsflag )
-            {
-                GAgent_Cloud_Handle( pgContextData, pgContextData->rtinfo.MqttRxbuf, GAGENT_BUF_LEN );
-            }
-            break;
-        case SIG_WRITE_FW:
-            GAgent_GetFwHeadInfo(pgContextData,&(pgContextData->rtinfo.firmwareInfo));
-            if (system_upgrade_userbin_check() == UPGRADE_FW_BIN1)
-            {
-                start_addr = 0x101000;
-            }
-            else if (system_upgrade_userbin_check() == UPGRADE_FW_BIN2)
-            {
-                start_addr = 0x1000;
-            }
-            GAgent_copyFirmware( pgContextData, 0x209000, start_addr,
-                pgContextData->rtinfo.firmwareInfo.file_len);
-            break;
-        case SIG_WEBCONFIG:
-            handleWebConfig( pgContextData );
-            break;
-        case SIG_BIGDATA:
-            throwgarbage(pgContextData, &pgContextData->rtinfo.file);
-            break;
-        default:
-            os_printf("---error sig! ---\n");
-            break;
+//  case SIG_INFRARED_READ:
+//      gizIrReadHandle();
+        break;
+    default:
+        os_printf("---error sig! ---\n");
+        break;
     }
 }
 
@@ -105,22 +213,21 @@ dataHandle_task(os_event_t *events)
  * Parameters   : none
  * Returns      : none
 *******************************************************************************/
-void ICACHE_FLASH_ATTR user_init(void)
+void user_init(void)
 {
+    struct devAttrs attrs;
+    uint32 system_free_size = 0;
+
     wifi_station_set_auto_connect(1);
     wifi_set_sleep_type(NONE_SLEEP_T);//set none sleep mode
     espconn_tcp_set_max_con(10);
-    LOCAL os_timer_t test_timer;
-    LOCAL os_timer_t gokit_timer; 
-    
-    uart_init_3(9600,115200/*74880*/);
+    uart_init_3(9600,115200);
     UART_SetPrintPort(1);
-
-    os_printf("\r\n\n\n---------------SDK version:%s--------------\n", system_get_sdk_version());
-    os_printf("\r\nsystem_get_free_heap_size=%d\n",system_get_free_heap_size());
+    os_printf( "---------------SDK version:%s--------------\n", system_get_sdk_version());
+    os_printf( "system_get_free_heap_size=%d\n",system_get_free_heap_size());
 
     struct rst_info *rtc_info = system_get_rst_info();
-    os_printf("reset reason: %x\n", rtc_info->reason);
+    os_printf( "reset reason: %x\n", rtc_info->reason);
     if (rtc_info->reason == REASON_WDT_RST ||
         rtc_info->reason == REASON_EXCEPTION_RST ||
         rtc_info->reason == REASON_SOFT_WDT_RST)
@@ -129,37 +236,72 @@ void ICACHE_FLASH_ATTR user_init(void)
         {
             os_printf("Fatal exception (%d):\n", rtc_info->exccause);
         }
-        os_printf("epc1=0x%08x, epc2=0x%08x, epc3=0x%08x, excvaddr=0x%08x, depc=0x%08x\n",
+        os_printf( "epc1=0x%08x, epc2=0x%08x, epc3=0x%08x, excvaddr=0x%08x, depc=0x%08x\n",
                 rtc_info->epc1, rtc_info->epc2, rtc_info->epc3, rtc_info->excvaddr, rtc_info->depc);
     }
+
     if (system_upgrade_userbin_check() == UPGRADE_FW_BIN1)
     {
-        os_printf("---UPGRADE_FW_BIN1---\n");
+        os_printf( "---UPGRADE_FW_BIN1---\n");
     }
     else if (system_upgrade_userbin_check() == UPGRADE_FW_BIN2)
     {
-        os_printf("---UPGRADE_FW_BIN2---\n");
+        os_printf( "---UPGRADE_FW_BIN2---\n");
     }
     
-    system_os_task(dataHandle_task, 1, TaskQueue, TaskQueueLen);
+    //user init
     
-    GAgent_Init( &pgContextData );
-    GAgent_dumpInfo( pgContextData );
-    
-    //gokit hardware init
-    gokit_hardware_init(); 
-    
-    //gokit software init
-    gokit_software_init(); 
+    //rgb led init
+    rgbGpioInit();
+    rgbLedInit();
 
-    //GAgent timer start
-    os_timer_disarm(&test_timer);
-    os_timer_setfn(&test_timer, (os_timer_func_t *)GAgent_Tick, pgContextData);
-    os_timer_arm(&test_timer, 1000, 1); 
+    //key init
+    singleKey[0] = keyInitOne(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,
+                                key1LongPress, key1ShortPress);
+    singleKey[1] = keyInitOne(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
+                                key2LongPress, key2ShortPress);
+    keys.key_num = GPIO_KEY_NUM;
+    keys.key_timer_ms = 10;
+    keys.singleKey = singleKey;
+    keyParaInit(&keys);
 
+    //motor init
+    motorInit();
+    motorControl(MOTOR_SPEED_DEFAULT);
+    
+    //temperature and humidity init
+    dh11Init();
+
+    //Infrared init
+    irInit(); 
+
+    //gizwits Init
+    gizwitsInit(); 
+    
     //gokit timer start
-    os_timer_disarm(&gokit_timer);
-    os_timer_setfn(&gokit_timer, (os_timer_func_t *)gokit_timer_func, NULL);
-    os_timer_arm(&gokit_timer, SOC_TIME_OUT, 1); 
+    os_timer_disarm(&userTimer); 
+    os_timer_setfn(&userTimer, (os_timer_func_t *)userTimerFunc, NULL); 
+    os_timer_arm(&userTimer, USER_TIME_MS, 1); 
+    
+    system_os_task(gagentProcessRun, USER_TASK_PRIO_1, TaskQueue, TaskQueueLen); 
+    attrs.mBindEnableTime = 0;
+    attrs.mDevAttr[0] = 0x00;
+    attrs.mDevAttr[1] = 0x00;
+    attrs.mDevAttr[2] = 0x00;
+    attrs.mDevAttr[3] = 0x00;
+    attrs.mDevAttr[4] = 0x00;
+    attrs.mDevAttr[5] = 0x00;
+    attrs.mDevAttr[6] = 0x00;
+    attrs.mDevAttr[7] = 0x00;
+    os_memcpy(attrs.mstrDevHV, HARDWARE_VERSION, os_strlen(HARDWARE_VERSION));
+    os_memcpy(attrs.mstrDevSV, SOFTWARE_VERSION, os_strlen(SOFTWARE_VERSION));
+    os_memcpy(attrs.mstrP0Ver, P0_VERSION, os_strlen(P0_VERSION));
+    os_memcpy(attrs.mstrProductKey, PRODUCT_KEY, os_strlen(PRODUCT_KEY));
+    os_memcpy(attrs.mstrProtocolVer, PROTOCOL_VERSION, os_strlen(PROTOCOL_VERSION));
+    gagentInit(attrs);
+    
+    system_os_task(gizwitsUserTask, USER_TASK_PRIO_0, userTaskQueue, userQueueLen); 
+    
+    os_printf("--- system_free_size = %d ---\n", system_get_free_heap_size()); 
 }
 

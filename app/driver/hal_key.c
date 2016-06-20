@@ -13,28 +13,28 @@
 *
 *********************************************************/
 #include "driver/hal_key.h"
-#include "gagent.h"
+#include "mem.h"
 
-uint32 key_count_time; 
+uint32 keyCountTime; 
 
 /*******************************************************************************
-* Function Name  : key_value_read
+* Function Name  : keyValueRead
 * Description    : Read the KEY state
 * Input          : None
 * Output         : None
 * Return         : uint8_t KEY state
 * Attention      : None
 *******************************************************************************/
-static uint8_t key_value_read(keys_typedef_t * keys)
+static ICACHE_FLASH_ATTR uint8_t keyValueRead(keys_typedef_t * keys)
 {
-    uint8_t read_key;
+    uint8_t read_key = 0;
 
-    if(!GPIO_INPUT_GET(keys->single_key[0]->gpio_id)) 
+    if(!GPIO_INPUT_GET(keys->singleKey[0]->gpio_id))
     {
         read_key |= PRESS_KEY1;
     }
 
-    if(!GPIO_INPUT_GET(keys->single_key[1]->gpio_id)) 
+    if(!GPIO_INPUT_GET(keys->singleKey[1]->gpio_id))
     {
         read_key |= PRESS_KEY2;
     }
@@ -44,30 +44,30 @@ static uint8_t key_value_read(keys_typedef_t * keys)
 
 
 /*******************************************************************************
-* Function Name  : key_state_read
+* Function Name  : keyStateRead
 * Description    : Read the KEY value
 * Input          : None
 * Output         : None
 * Return         : uint8_t KEY value
 * Attention      : None
 *******************************************************************************/
-static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
+static uint8_t ICACHE_FLASH_ATTR keyStateRead(keys_typedef_t * keys)
 {
-    static uint8_t Key_Check;
-    static uint8_t Key_State;
-    static uint16_t Key_LongCheck;
+    static uint8_t Key_Check = 0;
+    static uint8_t Key_State = 0;
+    static uint16_t Key_LongCheck = 0;
     static uint8_t Key_Prev = 0;     //保存上一次按键
 
-    uint8_t Key_press;
+    uint8_t Key_press = 0;
     uint8_t Key_return = 0;
 
     //累加按键时间
-    key_count_time++;
+    keyCountTime++;
         
-    //KeyCT 1MS+1  按键消抖20MS
-    if(key_count_time >= (20 / keys->key_timer_ms)) 
+    //KeyCT 1MS+1  按键消抖30MS
+    if(keyCountTime >= (30 / keys->key_timer_ms)) 
     {
-        key_count_time = 0; 
+        keyCountTime = 0; 
         Key_Check = 1;
     }
     
@@ -76,7 +76,7 @@ static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
         Key_Check = 0;
         
         //获取当前按键触发值
-        Key_press = key_value_read(keys); 
+        Key_press = keyValueRead(keys); 
         
         switch (Key_State)
         {
@@ -118,7 +118,7 @@ static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
                 if(Key_press == Key_Prev)
                 {
                     Key_LongCheck++;
-                    if(Key_LongCheck >= 100)    //长按2S
+                    if(Key_LongCheck >= 100)    //长按3S (消抖30MS * 100)
                     {
                         Key_LongCheck = 0;
                         Key_State = 3;
@@ -141,11 +141,11 @@ static uint8_t ICACHE_FLASH_ATTR key_state_read(keys_typedef_t * keys)
     return  NO_KEY;
 }
 
-void gokit_key_handle(keys_typedef_t * keys)
+void ICACHE_FLASH_ATTR gokitKeyHandle(keys_typedef_t * keys)
 {
     uint8_t key_value = 0;
 
-    key_value = key_state_read(keys); 
+    key_value = keyStateRead(keys); 
 
     //Callback judgment
     if(key_value & KEY_UP)
@@ -153,18 +153,18 @@ void gokit_key_handle(keys_typedef_t * keys)
         if(key_value & PRESS_KEY1)
         {
             //key1 callback function of short press
-            if(keys->single_key[0]->short_press) 
+            if(keys->singleKey[0]->short_press) 
             {
-                keys->single_key[0]->short_press(); 
+                keys->singleKey[0]->short_press(); 
             }
         }
 
         if(key_value & PRESS_KEY2)
         {
             //key2 callback function of short press
-            if(keys->single_key[1]->short_press) 
+            if(keys->singleKey[1]->short_press) 
             {
-                keys->single_key[1]->short_press(); 
+                keys->singleKey[1]->short_press(); 
             }
         }
     }
@@ -174,69 +174,69 @@ void gokit_key_handle(keys_typedef_t * keys)
         if(key_value & PRESS_KEY1)
         {
             //key1 callback function of long press
-            if(keys->single_key[0]->long_press) 
+            if(keys->singleKey[0]->long_press) 
             {
-                keys->single_key[0]->long_press(); 
+                keys->singleKey[0]->long_press(); 
             }
         }
 
         if(key_value & PRESS_KEY2)
         {
             //key2 callback function of long press
-            if(keys->single_key[1]->long_press) 
+            if(keys->singleKey[1]->long_press) 
             {
-                keys->single_key[1]->long_press(); 
+                keys->singleKey[1]->long_press(); 
             }
         }
     }
 }
 
-key_typedef_t * ICACHE_FLASH_ATTR key_init_one(uint8 gpio_id, uint32 gpio_name, uint8 gpio_func, gokit_key_function long_press, gokit_key_function short_press)
+key_typedef_t * ICACHE_FLASH_ATTR keyInitOne(uint8 gpio_id, uint32 gpio_name, uint8 gpio_func, gokit_key_function long_press, gokit_key_function short_press)
 {
-    key_typedef_t * single_key = (key_typedef_t *)os_zalloc(sizeof(key_typedef_t));
+    key_typedef_t * singleKey = (key_typedef_t *)os_zalloc(sizeof(key_typedef_t));
 
-    single_key->gpio_id = gpio_id;
-    single_key->gpio_name = gpio_name;
-    single_key->gpio_func = gpio_func;
-    single_key->long_press = long_press;
-    single_key->short_press = short_press;
+    singleKey->gpio_id = gpio_id;
+    singleKey->gpio_name = gpio_name;
+    singleKey->gpio_func = gpio_func;
+    singleKey->long_press = long_press;
+    singleKey->short_press = short_press;
 
-    return single_key;
+    return singleKey;
 }
 
-void key_para_init(keys_typedef_t * keys)
+void ICACHE_FLASH_ATTR keyParaInit(keys_typedef_t * keys)
 {
-    uint8 tem_i; 
+    uint8 tem_i = 0; 
     
     //init key timer 
     os_timer_disarm(&keys->key_10ms); 
-    os_timer_setfn(&keys->key_10ms, (os_timer_func_t *)gokit_key_handle, keys); 
+    os_timer_setfn(&keys->key_10ms, (os_timer_func_t *)gokitKeyHandle, keys); 
     
     //GPIO configured as a high level input mode
     for(tem_i = 0; tem_i < keys->key_num; tem_i++) 
     {
-        PIN_FUNC_SELECT(keys->single_key[tem_i]->gpio_name, keys->single_key[tem_i]->gpio_func); 
-        GPIO_OUTPUT_SET(GPIO_ID_PIN(keys->single_key[tem_i]->gpio_id), 1); 
-        PIN_PULLUP_EN(keys->single_key[tem_i]->gpio_name); 
-        GPIO_DIS_OUTPUT(GPIO_ID_PIN(keys->single_key[tem_i]->gpio_id)); 
+        PIN_FUNC_SELECT(keys->singleKey[tem_i]->gpio_name, keys->singleKey[tem_i]->gpio_func); 
+        GPIO_OUTPUT_SET(GPIO_ID_PIN(keys->singleKey[tem_i]->gpio_id), 1); 
+        PIN_PULLUP_EN(keys->singleKey[tem_i]->gpio_name); 
+        GPIO_DIS_OUTPUT(GPIO_ID_PIN(keys->singleKey[tem_i]->gpio_id)); 
         
-        GAgent_Printf(GAGENT_DEBUG, "key_gpio%d_init \r\n", keys->key_num + 1); 
+        os_printf("gpio_name %d \r\n", keys->singleKey[tem_i]->gpio_id); 
     }
     
     //key timer start
     os_timer_arm(&keys->key_10ms, keys->key_timer_ms, 1); 
 }
 
-void key_sensortest(void)
+void ICACHE_FLASH_ATTR keySensorTest(void)
 {
     /* Test LOG model */
-//  single_key[0] = key_init_one(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,
-//                                  key1_long_press, key1_short_press);
-//  single_key[1] = key_init_one(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
-//                                  key2_long_press, key2_short_press);
+//  singleKey[0] = keyInitOne(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,
+//                                  key1LongPress, key1ShortPress);
+//  singleKey[1] = keyInitOne(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
+//                                  key2LongPress, key2ShortPress);
 //  keys.key_num = GPIO_KEY_NUM;
 //  keys.key_timer_ms = 10;
-//  keys.single_key = single_key;
-//  key_para_init(&keys);
+//  keys.singleKey = singleKey;
+//  keyParaInit(&keys);
 }
 

@@ -20,12 +20,11 @@ else
 	OBJDUMP = xt-objdump
 endif
 
-BOOT?=new
-APP?=1
+BOOT?=none
+APP?=0
 SPI_SPEED?=40
 SPI_MODE?=QIO
-SPI_SIZE_MAP?=6
-
+SPI_SIZE_MAP?=0
 ifeq ($(BOOT), new)
     boot = new
 else
@@ -188,7 +187,6 @@ OBINS := $(GEN_BINS:%=$(BINODIR)/%)
 
 CCFLAGS += 			\
 	-g			\
-	-O2			\
 	-Wpointer-arith		\
 	-Wundef			\
 	-Wl,-EL			\
@@ -197,8 +195,8 @@ CCFLAGS += 			\
 	-mlongcalls	\
 	-mtext-section-literals \
 	-ffunction-sections \
-	-fdata-sections
-#	-Wall			
+	-fdata-sections   \
+	#-Wall	-Werror		
 
 CFLAGS = $(CCFLAGS) $(DEFINES) $(EXTRA_CCFLAGS) $(INCLUDES)
 DFLAGS = $(CCFLAGS) $(DDEFINES) $(EXTRA_CCFLAGS) $(INCLUDES)
@@ -239,6 +237,7 @@ ifeq ($(APP), 0)
 	@$(OBJDUMP) -x -s $< > ../bin/eagle.dump
 	@$(OBJDUMP) -S $< > ../bin/eagle.S
 else
+	mkdir -p ../bin/upgrade
 	@$(RM) -r ../bin/upgrade/$(BIN_NAME).S ../bin/upgrade/$(BIN_NAME).dump
 	@$(OBJDUMP) -x -s $< > ../bin/upgrade/$(BIN_NAME).dump
 	@$(OBJDUMP) -S $< > ../bin/upgrade/$(BIN_NAME).S
@@ -253,7 +252,7 @@ endif
 	@echo "!!!"
 	
 ifeq ($(app), 0)
-	@python ../tools/gen_appbin.py $< 0 $(mode) $(freqdiv) $(size_map)
+	@python ../tools/gen_appbin.py $< 0 $(mode) $(freqdiv) $(size_map) $(app)
 	@mv eagle.app.flash.bin ../bin/eagle.flash.bin
 	@mv eagle.app.v6.irom0text.bin ../bin/eagle.irom0text.bin
 	@rm eagle.app.v6.*
@@ -263,10 +262,10 @@ ifeq ($(app), 0)
 	@echo "eagle.irom0text.bin---->0x40000"
 else
     ifneq ($(boot), new)
-		@python ../tools/gen_appbin.py $< 1 $(mode) $(freqdiv) $(size_map)
+		@python ../tools/gen_appbin.py $< 1 $(mode) $(freqdiv) $(size_map) $(app)
 		@echo "Support boot_v1.1 and +"
     else
-		@python ../tools/gen_appbin.py $< 2 $(mode) $(freqdiv) $(size_map)
+		@python ../tools/gen_appbin.py $< 2 $(mode) $(freqdiv) $(size_map) $(app)
 
     	ifeq ($(size_map), 6)
 		@echo "Support boot_v1.4 and +"
@@ -285,7 +284,6 @@ else
 	@echo "boot.bin------------>0x00000"
 	@echo "$(BIN_NAME).bin--->$(addr)"
 endif
-
 	@echo "!!!"
 
 #############################################################
@@ -298,6 +296,8 @@ all:	.subdirs $(OBJS) $(OLIBS) $(OIMAGES) $(OBINS) $(SPECIAL_MKTARGETS)
 clean:
 	$(foreach d, $(SUBDIRS), $(MAKE) -C $(d) clean;)
 	$(RM) -r $(ODIR)/$(TARGET)/$(FLAVOR)
+	find ../ -name .output | xargs rm -fr
+	$(RM) -r ../bin/upgrade
 
 clobber: $(SPECIAL_CLOBBER)
 	$(foreach d, $(SUBDIRS), $(MAKE) -C $(d) clobber;)
@@ -373,6 +373,6 @@ $(foreach image,$(GEN_IMAGES),$(eval $(call MakeImage,$(basename $(image)))))
 # Required for each makefile to inherit from the parent
 #
 
-INCLUDES := $(INCLUDES) -I $(PDIR)include -I $(PDIR)include/$(TARGET)
+INCLUDES := $(INCLUDES) -I $(PDIR)include -I $(PDIR)include/$(TARGET) -I $(PDIR)/app/gagent/inc -I $(PDIR)/app/Gizwits
 PDIR := ../$(PDIR)
 sinclude $(PDIR)Makefile

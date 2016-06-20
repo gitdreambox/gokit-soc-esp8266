@@ -24,17 +24,15 @@
 
 typedef struct
 {
-//  uint8_t pre_tem_means_val;
-//  uint8_t pre_hum_means_val;
     uint8_t th_num;
     uint8_t th_amount; 
     uint8_t th_bufs[10][2];
 }th_typedef_t; 
 
 /* Function declaration */
-uint8_t dh11_read(uint8_t * temperature, uint8_t * humidity); 
-uint8_t dh11_init(void); //Init DHT11
-void dh11_sensortest(void);
+uint8_t dh11Read(uint8_t * temperature, uint8_t * humidity); 
+uint8_t dh11Init(void); //Init DHT11
+void dh11SensorTest(void);
 
 #endif /*_HAL_HEMP_HUM_H*/
 

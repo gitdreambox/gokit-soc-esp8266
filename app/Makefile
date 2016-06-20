@@ -23,7 +23,8 @@ GEN_BINS= eagle.app.v6.bin
 SPECIAL_MKTARGETS=$(APP_MKTARGETS)
 SUBDIRS=    \
 	user    \
-	driver
+    driver	\
+	Gizwits
 
 endif # } PDIR
 
@@ -32,11 +33,11 @@ LDDIR = ../ld
 
 CCFLAGS += -Os
 
-TARGET_LDFLAGS =		\
-	-nostdlib		\
-	-Wl,-EL \
-	--longcalls \
-	--text-section-literals
+TARGET_LDFLAGS =        \
+    -nostdlib        \
+    -Wl,-EL \
+    --longcalls \
+    --text-section-literals
 
 ifeq ($(FLAVOR),debug)
     TARGET_LDFLAGS += -g -O2
@@ -47,33 +48,37 @@ ifeq ($(FLAVOR),release)
 endif
 
 COMPONENTS_eagle.app.v6 = \
-	user/libuser.a  \
-	driver/libdriver.a
+    user/libuser.a \
+    driver/libdriver.a \
+	Gizwits/libGizwits.a
 
 LINKFLAGS_eagle.app.v6 = \
-	-L../lib        \
-	-nostdlib	\
+    -L../lib        \
+    -nostdlib    \
     -T$(LD_FILE)   \
-	-Wl,--no-check-sections	\
-    -u call_user_start	\
-	-Wl,-static						\
-	-Wl,--start-group					\
-	-lc					\
-	-lgcc					\
-	-lhal					\
-	-lphy	\
-	-lpp	\
-	-lnet80211	\
-	-llwip	\
-	-lwpa	\
-	-lmain	\
-	-ljson	\
-	-lupgrade\
-	-lssl	\
-	-lpwm	\
-	-lsmartconfig \
-	$(DEP_LIBS_eagle.app.v6)					\
-	-Wl,--end-group
+    -Wl,--no-check-sections    \
+    -u call_user_start    \
+    -Wl,-static                        \
+    -Wl,--start-group                    \
+    -lc                    \
+    -lgcc                    \
+    -lhal                    \
+    -lphy    \
+    -lpp    \
+    -lnet80211    \
+    -llwip    \
+    -lwpa    \
+    -lmain    \
+    -ljson    \
+    -lupgrade\
+    -lssl    \
+    -lpwm    \
+    -lcrypto \
+    -lsmartconfig \
+    -lairkiss \
+    -lgagent \
+    $(DEP_LIBS_eagle.app.v6)                    \
+    -Wl,--end-group
 
 DEPENDS_eagle.app.v6 = \
                 $(LD_FILE) \
@@ -87,21 +92,21 @@ DEPENDS_eagle.app.v6 = \
 #   for a subtree within the makefile rooted therein
 #
 
-#UNIVERSAL_TARGET_DEFINES =		\
+#UNIVERSAL_TARGET_DEFINES =        \
 
 # Other potential configuration flags include:
-#	-DTXRX_TXBUF_DEBUG
-#	-DTXRX_RXBUF_DEBUG
-#	-DWLAN_CONFIG_CCX
-CONFIGURATION_DEFINES =	-DICACHE_FLASH
+#    -DTXRX_TXBUF_DEBUG
+#    -DTXRX_RXBUF_DEBUG
+#    -DWLAN_CONFIG_CCX
+CONFIGURATION_DEFINES =    -DICACHE_FLASH
 
-DEFINES +=				\
-	$(UNIVERSAL_TARGET_DEFINES)	\
-	$(CONFIGURATION_DEFINES)
+DEFINES +=                \
+    $(UNIVERSAL_TARGET_DEFINES)    \
+    $(CONFIGURATION_DEFINES)
 
-DDEFINES +=				\
-	$(UNIVERSAL_TARGET_DEFINES)	\
-	$(CONFIGURATION_DEFINES)
+DDEFINES +=                \
+    $(UNIVERSAL_TARGET_DEFINES)    \
+    $(CONFIGURATION_DEFINES)
 
 
 #############################################################
@@ -116,7 +121,7 @@ DDEFINES +=				\
 # Required for each makefile to inherit from the parent
 #
 
-INCLUDES := $(INCLUDES) -I $(PDIR)include
+INCLUDES := $(INCLUDES) -I $(PDIR)include 
 PDIR := ../$(PDIR)
 sinclude $(PDIR)Makefile
 
