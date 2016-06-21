@@ -1,6 +1,17 @@
 20160621
 1、修复WiFi状态变化后不能解析出配置模式问题。
 2、gizEventProcess()中reportData修改成全局变量，user_handle()数据上报使用reportData。
+3、gizwits_protocol模块全局变量整理到结构体gizwits_protocol_t中。
+4、增加透传事件TRANSPARENT_DATA，处理透传数据。
+
+20160617
+1、替换lib\libgagent.a文件到现有工程。
+2、替换include\gagent_external.h文件到现有工程。
+3、user_init函数中添加
+    +os_memcpy(attrs.mstrSdkVerLow, SDK_VERSION, os_strlen(SDK_VERSION));
+    gagentInit(attrs);
+4、SDK_VERSION定义于gizwits_product.h，且必须为字符型数据。
+5、OTA时固件版本必须大于现有固件版本，固件推送时填入的硬件版本号固定为"00ESP826",软件版本号为"040200xx"，其中xx为SDK_VERSION。
 
 20160612
 1、更新libgagent.a文件，修复“概率出现，进行airlink配置后，APP端不会配置成功的提示”的问题。
