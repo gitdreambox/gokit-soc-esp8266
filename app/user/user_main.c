@@ -60,16 +60,13 @@ LOCAL os_timer_t userTimer;
 LOCAL key_typedef_t * singleKey[GPIO_KEY_NUM];
 LOCAL keys_typedef_t keys;
 
-//extern volatile uint8_t reportBuf[256];
-
 LOCAL void ICACHE_FLASH_ATTR user_handle(void)
 {
     /*
     //gizReportData() demo
-    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf;
 
-    reportData->dev_status.infrared = irValue;
-    gizReportData(ACTION_REPORT_DEV_STATUS, (uint8_t *)&reportBuf, sizeof(gizwits_report_t));
+    reportData.dev_status.infrared = irValue;
+    gizReportData(ACTION_REPORT_DEV_STATUS, (uint8_t *)&reportData, sizeof(gizwits_report_t));
     */
 }
 

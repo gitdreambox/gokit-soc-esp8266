@@ -124,39 +124,36 @@ void ICACHE_FLASH_ATTR gizWiFiStatus(uint16_t value)
         os_printf("@@@@ GAgentStatus[hex]:%02x | [Bin]:%d,%d,%d,%d,%d,%d \r\n", status.value, status.types.con_m2m, status.types.con_route, status.types.binding, status.types.onboarding, status.types.station, status.types.softap);
 
         //OnBoarding mode status
-        if(lastStatus.types.onboarding != status.types.onboarding)
+        if(1 == status.types.onboarding)
         {
-            if(1 == status.types.onboarding)
+            if(1 == status.types.softap)
             {
-                if(1 == status.types.softap)
-                {
-                    gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_SOFTAP;
-                    gizwitsProtocol.processEvent.num++;
-                    os_printf("OnBoarding: SoftAP or Web mode\r\n");
-                }
-
-                if(1 == status.types.station)
-                {
-                    gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_AIRLINK;
-                    gizwitsProtocol.processEvent.num++;
-                    os_printf("OnBoarding: AirLink mode\r\n");
-                }
+                gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_SOFTAP;
+                gizwitsProtocol.processEvent.num++;
+                os_printf("OnBoarding: SoftAP or Web mode\r\n");
             }
-            else
-            {
-                if(1 == status.types.softap)
-                {
-                    gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_SOFTAP;
-                    gizwitsProtocol.processEvent.num++;
-                    os_printf("OnBoarding: SoftAP or Web mode\r\n");
-                }
 
-                if(1 == status.types.station)
-                {
-                    gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_STATION;
-                    gizwitsProtocol.processEvent.num++;
-                    os_printf("OnBoarding: Station mode\r\n");
-                }
+            if(1 == status.types.station)
+            {
+                gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_AIRLINK;
+                gizwitsProtocol.processEvent.num++;
+                os_printf("OnBoarding: AirLink mode\r\n");
+            }
+        }
+        else
+        {
+            if(1 == status.types.softap)
+            {
+                gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_SOFTAP;
+                gizwitsProtocol.processEvent.num++;
+                os_printf("OnBoarding: SoftAP or Web mode\r\n");
+            }
+
+            if(1 == status.types.station)
+            {
+                gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_STATION;
+                gizwitsProtocol.processEvent.num++;
+                os_printf("OnBoarding: Station mode\r\n");
             }
         }
 

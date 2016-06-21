@@ -3,12 +3,13 @@
 #include <string.h>
 #include "gizwits_product.h"
 
+gizwits_report_t reportData;
+
 void ICACHE_FLASH_ATTR gizEventProcess(event_info_t *info, uint8_t *data, uint32_t len)
 {
     uint8_t i = 0;
     uint8_t rssi = *data;
     gizwits_issued_t *issued = (gizwits_issued_t *)data;
-    gizwits_report_t reportData;
 
     if((NULL == info) || (NULL == data))
     {
