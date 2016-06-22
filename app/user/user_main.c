@@ -45,60 +45,51 @@ LOCAL  os_event_t   TaskQueue[TaskQueueLen];
 #define userQueueLen    200
 LOCAL os_event_t userTaskQueue[userQueueLen]; 
 
-#define USER_TIME_MS 10
+#define USER_TIME_MS 100
 LOCAL os_timer_t userTimer; 
+#define TH_TIMEOUT                              (1000 / USER_TIME_MS)       //Temperature and humidity detection minimum time
+#define INF_TIMEOUT                             (500 / USER_TIME_MS)    
 
-LOCAL key_typedef_t * singleKey[2];
-LOCAL keys_typedef_t keys; 
+/*****************************************************
+ * * I/O相关定义
+ * ******************************************************/
+#define GPIO_KEY_NUM                            2
+#define KEY_0_IO_MUX                            PERIPHS_IO_MUX_GPIO0_U
+#define KEY_0_IO_NUM                            0
+#define KEY_0_IO_FUNC                           FUNC_GPIO0
 
-extern volatile uint8_t reportBuf[256]; 
+#define KEY_1_IO_MUX                            PERIPHS_IO_MUX_MTMS_U
+#define KEY_1_IO_NUM                            14
+#define KEY_1_IO_FUNC                           FUNC_GPIO14
 
-LOCAL uint8_t ICACHE_FLASH_ATTR gizThHandle(void)
+LOCAL key_typedef_t * singleKey[GPIO_KEY_NUM];
+LOCAL keys_typedef_t keys;
+
+extern gizwits_protocol_t gizwitsProtocol; 
+
+LOCAL uint8_t ICACHE_FLASH_ATTR gizThHandle(uint8_t * curtem, uint8_t * curhumi)
 {
     static uint16_t thCtime = 0;
-    static uint8_t preTemMeansVal = 0;
-    static uint8_t pretemMeansVal = 0;
     uint8_t curTem = 0, curHum = 0;
-    uint16_t temMeans = 0, hum_means = 0;
     uint8_t ret = 0;
-    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf; 
     
     if(TH_TIMEOUT < thCtime)
     {
         thCtime = 0;
 
         ret = dh11Read(&curTem, &curHum);
+        
         if(1 == ret)
         {
             os_printf("@@@@ dh11Read error ! \n");
             return 0;
         }
 
-        //Being the first time and the initiative to report
-        if((preTemMeansVal == 0) || (pretemMeansVal == 0))
-        {
-            preTemMeansVal = curTem;
-            pretemMeansVal = curHum;
+        //Assignment to report data
+        *curtem = curTem; 
+        *curhumi = curHum; 
 
-            //Assignment to report data
-            reportData->dev_status.temperature = preTemMeansVal;
-            reportData->dev_status.humidity = pretemMeansVal;
-
-            return (1);
-        }
-
-        //Before and after the two values, it is determined whether or not reported
-        if((preTemMeansVal != curTem) || (pretemMeansVal != curHum))
-        {
-            preTemMeansVal = curTem;
-            pretemMeansVal = curHum;
-
-            //Assignment to report data
-            reportData->dev_status.temperature = preTemMeansVal;
-            reportData->dev_status.humidity = pretemMeansVal;
-
-            return (1);
-        }
+        return (1);
     }
 
     thCtime++;
@@ -106,11 +97,10 @@ LOCAL uint8_t ICACHE_FLASH_ATTR gizThHandle(void)
     return (0);
 }
 
-LOCAL uint8_t ICACHE_FLASH_ATTR gokitIrHandle(void)
+LOCAL uint8_t ICACHE_FLASH_ATTR gokitIrHandle(uint8_t * curir)
 {
     static uint32 irCtime = 0;
     uint8_t irValue = 0;
-    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf; 
     
     if(INF_TIMEOUT < irCtime)
     {
@@ -118,12 +108,9 @@ LOCAL uint8_t ICACHE_FLASH_ATTR gokitIrHandle(void)
 
         irValue = irUpdateStatus();
 
-        if(irValue != reportData->dev_status.infrared)
-        {
-            reportData->dev_status.infrared = irValue;
+        *curir = irValue; 
 
-            return (1);
-        }
+        return (1); 
     }
 
     irCtime++;
@@ -134,17 +121,26 @@ LOCAL uint8_t ICACHE_FLASH_ATTR gokitIrHandle(void)
 LOCAL void ICACHE_FLASH_ATTR user_handle(void)
 {
     uint8_t ret = 0; 
+    uint8_t curTemperature = 0; 
+    uint8_t curHumidity = 0; 
+    uint8_t curir = 0; 
     
     //Temperature and humidity sensors reported conditional
-    ret = gizThHandle();
-
-    //Infrared sensors reported conditional
-    ret = gokitIrHandle(); 
-    
+    ret = gizThHandle(&curTemperature, &curHumidity);
     if(1 == ret)
     {
-        gizReportData(ACTION_REPORT_DEV_STATUS, (uint8_t *)&reportBuf, sizeof(gizwits_report_t)); 
+        reportData.dev_status.temperature = Y2X(TEMPERATURE_RATIO, TEMPERATURE_ADDITION, curTemperature);
+        reportData.dev_status.humidity = Y2X(HUMIDITY_RATIO, HUMIDITY_ADDITION, curHumidity); 
     }
+    
+    //Infrared sensors reported conditional
+    ret = gokitIrHandle(&curir); 
+    if(1 == ret)
+    {
+        reportData.dev_status.infrared = curir; 
+    }
+    
+    gizReportData(ACTION_REPORT_DEV_STATUS, (uint8_t *)&reportData, sizeof(gizwits_report_t)); 
 }
 
 LOCAL void ICACHE_FLASH_ATTR key2ShortPress(void)
@@ -276,14 +272,10 @@ void user_init(void)
     irInit(); 
 
     //gizwits Init
-    gizwitsInit(); 
-    
-    //gokit timer start
-    os_timer_disarm(&userTimer); 
-    os_timer_setfn(&userTimer, (os_timer_func_t *)userTimerFunc, NULL); 
-    os_timer_arm(&userTimer, USER_TIME_MS, 1); 
-    
-    system_os_task(gagentProcessRun, USER_TASK_PRIO_1, TaskQueue, TaskQueueLen); 
+    gizwitsInit();
+
+    system_os_task(gagentProcessRun, USER_TASK_PRIO_1, TaskQueue, TaskQueueLen);
+
     attrs.mBindEnableTime = 0;
     attrs.mDevAttr[0] = 0x00;
     attrs.mDevAttr[1] = 0x00;
@@ -298,10 +290,16 @@ void user_init(void)
     os_memcpy(attrs.mstrP0Ver, P0_VERSION, os_strlen(P0_VERSION));
     os_memcpy(attrs.mstrProductKey, PRODUCT_KEY, os_strlen(PRODUCT_KEY));
     os_memcpy(attrs.mstrProtocolVer, PROTOCOL_VERSION, os_strlen(PROTOCOL_VERSION));
+    os_memcpy(attrs.mstrSdkVerLow, SDK_VERSION, os_strlen(SDK_VERSION));
     gagentInit(attrs);
-    
-    system_os_task(gizwitsUserTask, USER_TASK_PRIO_0, userTaskQueue, userQueueLen); 
-    
-    os_printf("--- system_free_size = %d ---\n", system_get_free_heap_size()); 
+
+    system_os_task(gizwitsUserTask, USER_TASK_PRIO_0, userTaskQueue, userQueueLen);
+
+    //gokit timer start
+    os_timer_disarm(&userTimer);
+    os_timer_setfn(&userTimer, (os_timer_func_t *)userTimerFunc, NULL);
+    os_timer_arm(&userTimer, USER_TIME_MS, 1);
+
+    os_printf("--- system_free_size = %d ---\n", system_get_free_heap_size());
 }
 

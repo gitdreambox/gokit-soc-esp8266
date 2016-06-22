@@ -10,6 +10,8 @@
 #define PK_LEN       32
 #endif
 
+#define SDK_USER_VER_LEN        2
+
 struct devAttrs
 {
     unsigned char mstrProtocolVer[MCU_PROTOCOLVER_LEN];
@@ -19,6 +21,7 @@ struct devAttrs
     unsigned char mstrProductKey[PK_LEN];
     unsigned char mDevAttr[MCU_MCUATTR_LEN];
     unsigned char mBindEnableTime;
+    unsigned char mstrSdkVerLow[SDK_USER_VER_LEN];
 };
 typedef struct
 {
