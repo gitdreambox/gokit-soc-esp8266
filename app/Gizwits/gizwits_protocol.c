@@ -2,20 +2,14 @@
 #include "gagent_external.h"
 #include "mem.h"
 
-volatile uint8_t issuedBuf[256]; 
-volatile uint8_t reportBuf[256]; 
-volatile gizwits_report_t lastReportData;
-volatile gizwits_report_t curReportData; 
-volatile uint32_t issuedLen = 0; 
-volatile uint32_t reportLen = 0; 
-event_info_t issuedProcessEvent;
-uint8_t gizConditionFlag = 0; 
+gizwits_protocol_t gizwitsProtocol;
 
 #define gizwitsTaskQueueLen    200
 LOCAL os_event_t gizwitsTaskQueue[gizwitsTaskQueueLen]; 
 LOCAL os_timer_t gizTimer; 
 
-extern void ICACHE_FLASH_ATTR gizEventProcess(event_info_t *info, uint8_t *data);
+extern void ICACHE_FLASH_ATTR gizEventProcess(event_info_t *info, uint8_t *data, uint32_t len);
+extern gizwits_report_t reportData; 
 
 /*
  * htons unsigned short -> 网络字节序
@@ -131,21 +125,19 @@ void ICACHE_FLASH_ATTR gizWiFiStatus(uint16_t value)
         os_printf("@@@@ GAgentStatus[hex]:%02x | [Bin]:%d,%d,%d,%d,%d,%d \r\n", status.value, status.types.con_m2m, status.types.con_route, status.types.binding, status.types.onboarding, status.types.station, status.types.softap);
 
         //OnBoarding mode status
-        if(lastStatus.types.onboarding != status.types.onboarding)
+        if(1 == status.types.onboarding)
         {
-            if(1 == status.types.onboarding)
+            if(1 == status.types.softap)
             {
-                if(1 == status.types.softap)
-                {
-                    issuedProcessEvent.event[issuedProcessEvent.num] = WIFI_SOFTAP;
-                    issuedProcessEvent.num++;
-                    os_printf("OnBoarding: SoftAP or Web mode\r\n");
-                }
+                gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_SOFTAP;
+                gizwitsProtocol.processEvent.num++;
+                os_printf("OnBoarding: SoftAP or Web mode\r\n");
+            }
 
                 if(1 == status.types.station)
                 {
-                    issuedProcessEvent.event[issuedProcessEvent.num] = WIFI_AIRLINK;
-                    issuedProcessEvent.num++;
+                    gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_AIRLINK;
+                    gizwitsProtocol.processEvent.num++;
                     os_printf("OnBoarding: AirLink mode\r\n");
                 }
             }
@@ -153,17 +145,16 @@ void ICACHE_FLASH_ATTR gizWiFiStatus(uint16_t value)
             {
                 if(1 == status.types.softap)
                 {
-                    issuedProcessEvent.event[issuedProcessEvent.num] = WIFI_SOFTAP;
-                    issuedProcessEvent.num++;
+                    gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_SOFTAP;
+                    gizwitsProtocol.processEvent.num++;
                     os_printf("OnBoarding: SoftAP or Web mode\r\n");
                 }
 
                 if(1 == status.types.station)
                 {
-                    issuedProcessEvent.event[issuedProcessEvent.num] = WIFI_STATION;
-                    issuedProcessEvent.num++;
+                    gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_STATION;
+                    gizwitsProtocol.processEvent.num++;
                     os_printf("OnBoarding: Station mode\r\n");
-                }
             }
         }
 
@@ -173,14 +164,14 @@ void ICACHE_FLASH_ATTR gizWiFiStatus(uint16_t value)
             lastStatus.types.binding = status.types.binding;
             if(1 == status.types.binding)
             {
-                issuedProcessEvent.event[issuedProcessEvent.num] = WIFI_OPEN_BINDING;
-                issuedProcessEvent.num++;
+                gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_OPEN_BINDING;
+                gizwitsProtocol.processEvent.num++;
                 os_printf("WiFi status: in binding mode\r\n");
             }
             else
             {
-                issuedProcessEvent.event[issuedProcessEvent.num] = WIFI_CLOSE_BINDING;
-                issuedProcessEvent.num++;
+                gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_CLOSE_BINDING;
+                gizwitsProtocol.processEvent.num++;
                 os_printf("WiFi status: out binding mode\r\n");
             }
         }
@@ -191,14 +182,14 @@ void ICACHE_FLASH_ATTR gizWiFiStatus(uint16_t value)
             lastStatus.types.con_route = status.types.con_route;
             if(1 == status.types.con_route)
             {
-                issuedProcessEvent.event[issuedProcessEvent.num] = WIFI_CON_ROUTER;
-                issuedProcessEvent.num++;
+                gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_CON_ROUTER;
+                gizwitsProtocol.processEvent.num++;
                 os_printf("WiFi status: connected router\r\n");
             }
             else
             {
-                issuedProcessEvent.event[issuedProcessEvent.num] = WIFI_DISCON_ROUTER;
-                issuedProcessEvent.num++;
+                gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_DISCON_ROUTER;
+                gizwitsProtocol.processEvent.num++;
                 os_printf("WiFi status: disconnected router\r\n");
             }
         }
@@ -209,14 +200,14 @@ void ICACHE_FLASH_ATTR gizWiFiStatus(uint16_t value)
             lastStatus.types.con_m2m = status.types.con_m2m;
             if(1 == status.types.con_m2m)
             {
-                issuedProcessEvent.event[issuedProcessEvent.num] = WIFI_CON_M2M;
-                issuedProcessEvent.num++;
+                gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_CON_M2M;
+                gizwitsProtocol.processEvent.num++;
                 os_printf("WiFi status: connected m2m\r\n");
             }
             else
             {
-                issuedProcessEvent.event[issuedProcessEvent.num] = WIFI_DISCON_M2M;
-                issuedProcessEvent.num++;
+                gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_DISCON_M2M;
+                gizwitsProtocol.processEvent.num++;
                 os_printf("WiFi status: disconnected m2m\r\n");
             }
         }
@@ -227,14 +218,14 @@ void ICACHE_FLASH_ATTR gizWiFiStatus(uint16_t value)
             lastStatus.types.app = status.types.app;
             if(1 == status.types.app)
             {
-                issuedProcessEvent.event[issuedProcessEvent.num] = WIFI_CON_APP;
-                issuedProcessEvent.num++;
+                gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_CON_APP;
+                gizwitsProtocol.processEvent.num++;
                 os_printf("WiFi status: app connect\r\n");
             }
             else
             {
-                issuedProcessEvent.event[issuedProcessEvent.num] = WIFI_DISCON_APP;
-                issuedProcessEvent.num++;
+                gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_DISCON_APP;
+                gizwitsProtocol.processEvent.num++;
                 os_printf("WiFi status: no app connect\r\n");
             }
         }
@@ -245,29 +236,30 @@ void ICACHE_FLASH_ATTR gizWiFiStatus(uint16_t value)
             lastStatus.types.test = status.types.test;
             if(1 == status.types.test)
             {
-                issuedProcessEvent.event[issuedProcessEvent.num] = WIFI_OPEN_TESTMODE;
-                issuedProcessEvent.num++;
+                gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_OPEN_TESTMODE;
+                gizwitsProtocol.processEvent.num++;
                 os_printf("WiFi status: in test mode\r\n");
             }
             else
             {
-                issuedProcessEvent.event[issuedProcessEvent.num] = WIFI_CLOSE_TESTMODE;
-                issuedProcessEvent.num++;
+                gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_CLOSE_TESTMODE;
+                gizwitsProtocol.processEvent.num++;
                 os_printf("WiFi status: out test mode\r\n");
             }
         }
 
         rssiValue = status.types.rssi;
-        issuedProcessEvent.event[issuedProcessEvent.num] = WIFI_RSSI;
-        issuedProcessEvent.num++;
+        gizwitsProtocol.processEvent.event[gizwitsProtocol.processEvent.num] = WIFI_RSSI;
+        gizwitsProtocol.processEvent.num++;
 
-        gizEventProcess(&issuedProcessEvent, (uint8_t *)&rssiValue);
-        os_memset((uint8_t *)&issuedProcessEvent, 0, sizeof(event_info_t));
+        gizEventProcess(&gizwitsProtocol.processEvent, (uint8_t *)&rssiValue, sizeof(rssiValue));
+        os_memset((uint8_t *)&gizwitsProtocol.processEvent, 0, sizeof(event_info_t));
 
-        lastStatus = status; 
+        lastStatus = status;
     }
 }
 
+/*
 void ICACHE_FLASH_ATTR reportDataDTC(dev_status_t * dst, dev_status_t * src)
 {
     int16_t value = 0;
@@ -287,8 +279,9 @@ void ICACHE_FLASH_ATTR reportDataDTC(dev_status_t * dst, dev_status_t * src)
         dst->temperature = Y2X(TEMPERATURE_RATIO, TEMPERATURE_ADDITION, src->temperature);
     }
 }
+*/
 
-void ICACHE_FLASH_ATTR issuedDataDTC(gizwits_issued_t * dst, gizwits_issued_t * src)
+/*void ICACHE_FLASH_ATTR issuedDataDTC(gizwits_issued_t * dst, gizwits_issued_t * src)
 {   
     int16_t value = 0;
 
@@ -300,15 +293,16 @@ void ICACHE_FLASH_ATTR issuedDataDTC(gizwits_issued_t * dst, gizwits_issued_t * 
         dst->attr_vals.led_r = X2Y(LED_R_RATIO, LED_R_ADDITION, src->attr_vals.led_r); 
         dst->attr_vals.led_g = X2Y(LED_G_RATIO, LED_G_ADDITION, src->attr_vals.led_g); 
         dst->attr_vals.led_b = X2Y(LED_B_RATIO, LED_B_ADDITION, src->attr_vals.led_b); 
-        value = exchangeBytes(src->attr_vals.motor_speed); 
-        dst->attr_vals.motor_speed = X2Y(MOTOR_SPEED_RATIO, MOTOR_SPEED_ADDITION, value); 
+        value = exchangeBytes(src->attr_vals.motor); 
+        dst->attr_vals.motor = X2Y(MOTOR_SPEED_RATIO, MOTOR_SPEED_ADDITION, value); 
     }
 }
+*/
 
 void ICACHE_FLASH_ATTR dataPoint2Event(event_info_t * info, gizwits_issued_t * issuedData)
 {
     os_printf("$$$$$ CONTROL_DEVICE[vals]-> [onoff:%x],[Color:%x],[LED_R:%d],[LED_G:%d],[SetLED_B:%d],[motor:%d] \n",
-              issuedData->attr_vals.led_onoff, issuedData->attr_vals.led_color, issuedData->attr_vals.led_r, issuedData->attr_vals.led_g, issuedData->attr_vals.led_b, issuedData->attr_vals.motor_speed);
+              issuedData->attr_vals.led_onoff, issuedData->attr_vals.led_color, issuedData->attr_vals.led_r, issuedData->attr_vals.led_g, issuedData->attr_vals.led_b, issuedData->attr_vals.motor);
 
     if((NULL != info)&&(NULL != issuedData))
     {
@@ -365,37 +359,37 @@ int8_t ICACHE_FLASH_ATTR checkReport(gizwits_report_t * cur, gizwits_report_t * 
     
     if(last->dev_status.led_color != cur->dev_status.led_color)
     {
-        os_printf("led_color \r\n"); 
+        os_printf("led_color \r\n", last->dev_status.led_color, cur->dev_status.led_color); 
         ret = 1;
     }
     
     if(last->dev_status.led_r != cur->dev_status.led_r)
     {
-        os_printf("led_r \r\n"); 
+        os_printf("led_r %d %d\r\n", last->dev_status.led_r, cur->dev_status.led_r); 
         ret = 1;
     }
     
     if(last->dev_status.led_g != cur->dev_status.led_g)
     {
-        os_printf("led_g \r\n"); 
+        os_printf("led_g %d %d\r\n", last->dev_status.led_g, cur->dev_status.led_g); 
         ret = 1;
     }
     
     if(last->dev_status.led_b != cur->dev_status.led_b)
     {
-        os_printf("led_b \r\n"); 
+        os_printf("led_b %d %d\r\n", last->dev_status.led_b, cur->dev_status.led_b); 
         ret = 1;
     }
     
     if(last->dev_status.motor != cur->dev_status.motor)
     {
-        os_printf("motor \r\n"); 
+        os_printf("motor %d %d\r\n", last->dev_status.motor, cur->dev_status.motor); 
         ret = 1;
     }
     
     if(last->dev_status.infrared != cur->dev_status.infrared)
     {
-        os_printf("infrared \r\n"); 
+        os_printf("infrared %d %d\r\n", last->dev_status.infrared, cur->dev_status.infrared); 
         ret = 1;
     }
     
@@ -403,7 +397,7 @@ int8_t ICACHE_FLASH_ATTR checkReport(gizwits_report_t * cur, gizwits_report_t * 
     {
         if(MIN_INTERVAL_TIME < gizGetIntervalsMs(lastReportMs)) 
         {
-            os_printf("temperature \r\n"); 
+            os_printf("temperature %d %d\r\n", last->dev_status.temperature, cur->dev_status.temperature); 
             lastReportMs = gizTimeMs(); 
             ret = 1;
         }
@@ -413,7 +407,7 @@ int8_t ICACHE_FLASH_ATTR checkReport(gizwits_report_t * cur, gizwits_report_t * 
     {
         if(MIN_INTERVAL_TIME < gizGetIntervalsMs(lastReportMs)) 
         {
-            os_printf("humidity \r\n"); 
+            os_printf("humidity %d %d\r\n", last->dev_status.humidity, cur->dev_status.humidity); 
             lastReportMs = gizTimeMs(); 
             ret = 1;
         }
@@ -455,7 +449,6 @@ void ICACHE_FLASH_ATTR gizConfigReset(void)
 int32_t ICACHE_FLASH_ATTR gizIssuedProcess(uint8_t *inData, uint32_t inLen,uint8_t *outData,int32_t *outLen)
 {
     gizwits_issued_t *gizIssuedData= (gizwits_issued_t *)&inData[1];
-    gizwits_report_t * reportData = (gizwits_report_t *)&reportBuf; 
 
     if((NULL == gizIssuedData) || (NULL == outData) || (NULL == outLen)) 
     {
@@ -467,34 +460,34 @@ int32_t ICACHE_FLASH_ATTR gizIssuedProcess(uint8_t *inData, uint32_t inLen,uint8
     switch(inData[0]) 
     {
         case ACTION_CONTROL_DEVICE:
-            dataPoint2Event((event_info_t *)&issuedProcessEvent, gizIssuedData); 
-            issuedDataDTC((gizwits_issued_t *)&issuedBuf, gizIssuedData); 
+            dataPoint2Event((event_info_t *)&gizwitsProtocol.processEvent, gizIssuedData);
+//          issuedDataDTC((gizwits_issued_t *)&gizwitsProtocol.issuedData, gizIssuedData);
+            
+            os_memcpy((uint8_t *)&gizwitsProtocol.issuedData, (uint8_t *)gizIssuedData, sizeof(gizwits_issued_t)); 
             
             system_os_post(USER_TASK_PRIO_2, SIG_ISSUED_DATA, 0); 
-
             *outLen = 0; 
             
             break;
             
         case ACTION_READ_DEV_STATUS:
-            lastReportData.action = ACTION_READ_DEV_STATUS_ACK; 
-            reportDataDTC((dev_status_t *)&lastReportData.dev_status, (dev_status_t *)&reportData->dev_status); 
+            gizwitsProtocol.lastReportData.action = ACTION_READ_DEV_STATUS_ACK;
+            //reportDataDTC((dev_status_t *)&gizwitsProtocol.lastReportData.dev_status, (dev_status_t *)&reportData->dev_status);
             
-            os_memcpy(outData, (uint8_t *)&lastReportData, sizeof(gizwits_report_t)); 
+            os_memcpy(outData, (uint8_t *)&gizwitsProtocol.lastReportData, sizeof(gizwits_report_t));
             *outLen = sizeof(gizwits_report_t);
             
-            os_printf("$$$$$ report_STA : [act:%x],[onf:%x],[Col:%x],[R:%d],[G:%d],[B:%d],[mo:%d],[inf:%d],[tem:%d]],[hum:%d] \n", 
-                      lastReportData.action, lastReportData.dev_status.led_onoff, lastReportData.dev_status.led_color, lastReportData.dev_status.led_r, lastReportData.dev_status.led_g,
-                      lastReportData.dev_status.led_b, lastReportData.dev_status.motor, lastReportData.dev_status.infrared, lastReportData.dev_status.temperature, lastReportData.dev_status.humidity); 
- 
+            os_printf("$$$$$ report_STA : [act:%x],[onf:%x],[Col:%x],[R:%d],[G:%d],[B:%d],[mo:%d],[inf:%d],[tem:%d]],[hum:%d] \n",
+                      gizwitsProtocol.lastReportData.action, gizwitsProtocol.lastReportData.dev_status.led_onoff, gizwitsProtocol.lastReportData.dev_status.led_color, gizwitsProtocol.lastReportData.dev_status.led_r, gizwitsProtocol.lastReportData.dev_status.led_g,
+                      gizwitsProtocol.lastReportData.dev_status.led_b, gizwitsProtocol.lastReportData.dev_status.motor, gizwitsProtocol.lastReportData.dev_status.infrared, gizwitsProtocol.lastReportData.dev_status.temperature, gizwitsProtocol.lastReportData.dev_status.humidity);
+
             break;
             
         case ACTION_W2D_PASSTHROUGH: //透传
-            os_memcpy(issuedBuf, &inData[1], inLen-1);
-            issuedLen = inLen-1;
-            
-            system_os_post(USER_TASK_PRIO_2, SIG_PASSTHROUGH, 0); 
-            
+            os_memcpy(gizwitsProtocol.issuedTransparentBuf, &inData[1], inLen-1);
+            gizwitsProtocol.issuedTransparentLen = inLen-1;
+
+            system_os_post(USER_TASK_PRIO_2, SIG_PASSTHROUGH, 0);
             *outLen = 0;
 
             break;
@@ -510,7 +503,7 @@ int32_t ICACHE_FLASH_ATTR gizIssuedProcess(uint8_t *inData, uint32_t inLen,uint8
 int32_t ICACHE_FLASH_ATTR gizReportData(uint8_t action, uint8_t * data, uint32_t len)
 {
     uint8_t *passReportBuf = NULL;
-    gizwits_report_t * reportData = (gizwits_report_t *)data;
+    gizwits_report_t * curReportData = (gizwits_report_t *)data;
 
     if(NULL == data)
     {
@@ -519,17 +512,20 @@ int32_t ICACHE_FLASH_ATTR gizReportData(uint8_t action, uint8_t * data, uint32_t
         return (-1);
     }
 
-    if(ACTION_REPORT_DEV_STATUS == action)
+    if(ACTION_REPORT_DEV_STATUS == action) 
     {
-        reportDataDTC((dev_status_t *)&curReportData.dev_status, (dev_status_t *)&(reportData->dev_status));
-
+//      reportDataDTC((dev_status_t *)&curReportData.dev_status, (dev_status_t *)&(reportData->dev_status));
+        
         //Regularly report conditional
-        if((1 == checkReport((gizwits_report_t *)&curReportData, (gizwits_report_t *)&lastReportData)))
+        if((1 == checkReport(curReportData, (gizwits_report_t *)&gizwitsProtocol.lastReportData))) 
         {
-            os_memcpy((uint8_t *)&lastReportData, (uint8_t *)&curReportData, sizeof(gizwits_report_t));
-            lastReportData.action = action;
+            os_memcpy((uint8_t *)&gizwitsProtocol.lastReportData, (uint8_t *)curReportData, sizeof(gizwits_report_t)); 
+            gizwitsProtocol.lastReportData.action = action;
 
-            os_printf("changed, report data\r\n");
+            os_printf("$$$$$ changed report data : [act:%x],[onf:%x],[Col:%x],[R:%d],[G:%d],[B:%d],[mo:%d],[inf:%d],[tem:%d]],[hum:%d] \n",
+                      reportData.action, reportData.dev_status.led_onoff, reportData.dev_status.led_color, reportData.dev_status.led_r, reportData.dev_status.led_g,
+                      reportData.dev_status.led_b, reportData.dev_status.motor, reportData.dev_status.infrared, reportData.dev_status.temperature, reportData.dev_status.humidity);
+            
             system_os_post(USER_TASK_PRIO_2, SIG_IMM_REPORT, 0);
         }
     }
@@ -589,22 +585,22 @@ void ICACHE_FLASH_ATTR gizwitsTask(os_event_t * events)
     switch(events->sig)
     {
     case SIG_ISSUED_DATA:
-        gizEventProcess(&issuedProcessEvent, (uint8_t *)issuedBuf);
+        gizEventProcess(&gizwitsProtocol.processEvent, (uint8_t *)&gizwitsProtocol.issuedData, sizeof(gizwits_issued_t));
 
         //clean event info
-        os_memset((uint8_t *)&issuedProcessEvent, 0, sizeof(event_info_t));
+        os_memset((uint8_t *)&gizwitsProtocol.processEvent, 0, sizeof(event_info_t));
         break;
     case SIG_PASSTHROUGH:
-        for(i = 0; i < issuedLen; i++)
-        {
-            os_printf("%x ", issuedBuf[i]);
-        }
-        os_printf("\n");
-        os_memset(issuedBuf, 0, 256);
-        issuedLen = 0;
+        gizwitsProtocol.processEvent.event[0] = TRANSPARENT_DATA;
+        gizwitsProtocol.processEvent.num = 1;
+        gizEventProcess(&gizwitsProtocol.processEvent, (uint8_t *)gizwitsProtocol.issuedTransparentBuf, gizwitsProtocol.issuedTransparentLen);
+
+        os_memset((uint8_t *)&gizwitsProtocol.processEvent, 0, sizeof(event_info_t));
+        os_memset(gizwitsProtocol.issuedTransparentBuf, 0, BUFFER_LEN_MAX);
+        gizwitsProtocol.issuedTransparentLen = 0;
         break;
     case SIG_IMM_REPORT:
-        gagentUploadData((uint8_t *)&lastReportData, sizeof(gizwits_report_t)); 
+        gagentUploadData((uint8_t *)&gizwitsProtocol.lastReportData, sizeof(gizwits_report_t));
         break;
     default:
         os_printf("---error sig! ---\n");
@@ -614,13 +610,17 @@ void ICACHE_FLASH_ATTR gizwitsTask(os_event_t * events)
 
 void ICACHE_FLASH_ATTR gizwitsInit(void)
 {
-    os_memset(issuedBuf, 0, sizeof(issuedBuf)); 
-    os_memset(reportBuf, 0, sizeof(reportBuf)); 
-    issuedLen = 0;
-    reportLen = 0;
-        
-    system_os_task(gizwitsTask, USER_TASK_PRIO_2, gizwitsTaskQueue, gizwitsTaskQueueLen); 
+    int16_t value = 0; 
     
+    os_memset(gizwitsProtocol.issuedTransparentBuf, 0, sizeof(gizwitsProtocol.issuedTransparentBuf));
+    os_memset(gizwitsProtocol.lastReportData, 0, sizeof(gizwits_report_t)); 
+    gizwitsProtocol.issuedTransparentLen = 0;
+    
+    value = Y2X(MOTOR_SPEED_RATIO, MOTOR_SPEED_ADDITION, MOTOR_SPEED_DEFAULT); 
+    reportData.dev_status.motor = exchangeBytes(value); 
+
+    system_os_task(gizwitsTask, USER_TASK_PRIO_2, gizwitsTaskQueue, gizwitsTaskQueueLen);
+
     //gokit timer start
     os_timer_disarm(&gizTimer);
     os_timer_setfn(&gizTimer, (os_timer_func_t *)gizwitsTimerFunc, NULL);
