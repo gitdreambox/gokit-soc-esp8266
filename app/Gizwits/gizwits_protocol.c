@@ -281,7 +281,7 @@ void ICACHE_FLASH_ATTR reportDataDTC(dev_status_t * dst, dev_status_t * src)
 }
 */
 
-void ICACHE_FLASH_ATTR issuedDataDTC(gizwits_issued_t * dst, gizwits_issued_t * src)
+/*void ICACHE_FLASH_ATTR issuedDataDTC(gizwits_issued_t * dst, gizwits_issued_t * src)
 {   
     int16_t value = 0;
 
@@ -293,15 +293,16 @@ void ICACHE_FLASH_ATTR issuedDataDTC(gizwits_issued_t * dst, gizwits_issued_t * 
         dst->attr_vals.led_r = X2Y(LED_R_RATIO, LED_R_ADDITION, src->attr_vals.led_r); 
         dst->attr_vals.led_g = X2Y(LED_G_RATIO, LED_G_ADDITION, src->attr_vals.led_g); 
         dst->attr_vals.led_b = X2Y(LED_B_RATIO, LED_B_ADDITION, src->attr_vals.led_b); 
-        value = exchangeBytes(src->attr_vals.motor_speed); 
-        dst->attr_vals.motor_speed = X2Y(MOTOR_SPEED_RATIO, MOTOR_SPEED_ADDITION, value); 
+        value = exchangeBytes(src->attr_vals.motor); 
+        dst->attr_vals.motor = X2Y(MOTOR_SPEED_RATIO, MOTOR_SPEED_ADDITION, value); 
     }
 }
+*/
 
 void ICACHE_FLASH_ATTR dataPoint2Event(event_info_t * info, gizwits_issued_t * issuedData)
 {
     os_printf("$$$$$ CONTROL_DEVICE[vals]-> [onoff:%x],[Color:%x],[LED_R:%d],[LED_G:%d],[SetLED_B:%d],[motor:%d] \n",
-              issuedData->attr_vals.led_onoff, issuedData->attr_vals.led_color, issuedData->attr_vals.led_r, issuedData->attr_vals.led_g, issuedData->attr_vals.led_b, issuedData->attr_vals.motor_speed);
+              issuedData->attr_vals.led_onoff, issuedData->attr_vals.led_color, issuedData->attr_vals.led_r, issuedData->attr_vals.led_g, issuedData->attr_vals.led_b, issuedData->attr_vals.motor);
 
     if((NULL != info)&&(NULL != issuedData))
     {
@@ -460,10 +461,11 @@ int32_t ICACHE_FLASH_ATTR gizIssuedProcess(uint8_t *inData, uint32_t inLen,uint8
     {
         case ACTION_CONTROL_DEVICE:
             dataPoint2Event((event_info_t *)&gizwitsProtocol.processEvent, gizIssuedData);
-            issuedDataDTC((gizwits_issued_t *)&gizwitsProtocol.issuedData, gizIssuedData);
+//          issuedDataDTC((gizwits_issued_t *)&gizwitsProtocol.issuedData, gizIssuedData);
+            
+            os_memcpy((uint8_t *)&gizwitsProtocol.issuedData, (uint8_t *)gizIssuedData, sizeof(gizwits_issued_t)); 
             
             system_os_post(USER_TASK_PRIO_2, SIG_ISSUED_DATA, 0); 
-
             *outLen = 0; 
             
             break;
@@ -510,7 +512,7 @@ int32_t ICACHE_FLASH_ATTR gizReportData(uint8_t action, uint8_t * data, uint32_t
         return (-1);
     }
 
-    if(ACTION_REPORT_DEV_STATUS == action)
+    if(ACTION_REPORT_DEV_STATUS == action) 
     {
 //      reportDataDTC((dev_status_t *)&curReportData.dev_status, (dev_status_t *)&(reportData->dev_status));
         

@@ -15,8 +15,10 @@ void ICACHE_FLASH_ATTR gizEventProcess(event_info_t *info, uint8_t *data, uint32
     uint8_t i = 0;
     uint8_t rssi = *data;
     gizwits_issued_t *issued = (gizwits_issued_t *)data;
-    int16_t value = 0; 
-//  gizwits_report_t reportData;
+    int16_t valueMotor = 0; 
+    uint8_t valueR = 0; 
+    uint8_t valueG = 0; 
+    uint8_t valueB = 0; 
 
     if((NULL == info) || (NULL == data)) 
     {
@@ -24,7 +26,7 @@ void ICACHE_FLASH_ATTR gizEventProcess(event_info_t *info, uint8_t *data, uint32
 
         return ;
     }
-    
+
     for(i=0; i<info->num; i++)
     {
         switch(info->event[i])
@@ -59,78 +61,101 @@ void ICACHE_FLASH_ATTR gizEventProcess(event_info_t *info, uint8_t *data, uint32
                 os_printf("########## led_onoff is %d\n", issued->attr_vals.led_onoff); 
                 if(issued->attr_vals.led_onoff == LED_Off) 
                 {
-                    reportData.dev_status.led_onoff = LED_Off; 
-
+                    os_printf("########## setled_Off \r\n"); 
+                    
                     rgbControl(0, 0, 0);
 
-                    os_printf("########## setled_Off \r\n"); 
+                    reportData.dev_status.led_onoff = LED_Off; 
                 }
                 if(issued->attr_vals.led_onoff == LED_On) 
                 {
-                    reportData.dev_status.led_onoff = LED_On; 
-
+                    os_printf("########## setled_On \r\n"); 
+                    
                     rgbControl(254, 0, 0);
 
-                    os_printf("########## setled_On \r\n"); 
+                    reportData.dev_status.led_onoff = LED_On; 
                 }
                 break;
             case SetLED_Color:
                 os_printf("########## led_color is %d\n", issued->attr_vals.led_color); 
                 if(issued->attr_vals.led_color == LED_Costom) 
                 {
-                    reportData.dev_status.led_color = LED_Costom;
-
-                    rgbControl(reportData.dev_status.led_r, reportData.dev_status.led_g, reportData.dev_status.led_b); 
+                    rgbControl(
+                       X2Y(LED_R_RATIO, LED_R_ADDITION, reportData.dev_status.led_r),
+                       X2Y(LED_G_RATIO, LED_G_ADDITION, reportData.dev_status.led_g),
+                       X2Y(LED_B_RATIO, LED_B_ADDITION, reportData.dev_status.led_b)); 
+                    
+                    reportData.dev_status.led_color = LED_Costom; 
                 }
                 if(issued->attr_vals.led_color == LED_Yellow) 
                 {
-                    reportData.dev_status.led_color = LED_Yellow; 
+                    os_printf("########## SetLED LED_Yellow \r\n"); 
 
                     rgbControl(254, 254, 0);
 
-                    os_printf("########## SetLED LED_Yellow \r\n"); 
+                    reportData.dev_status.led_color = LED_Yellow; 
                 }
                 if(issued->attr_vals.led_color == LED_Purple) 
                 {
-                    reportData.dev_status.led_color = LED_Purple; 
+                    os_printf("########## SetLED LED_Purple \r\n"); 
 
                     rgbControl(254, 0, 70);
 
-                    os_printf("########## SetLED LED_Purple \r\n"); 
+                    reportData.dev_status.led_color = LED_Purple; 
                 }
                 if(issued->attr_vals.led_color == LED_Pink) 
                 {
-                    reportData.dev_status.led_color = LED_Pink; 
-
-                    rgbControl(238, 30, 30);
-
                     os_printf("########## SetLED LED_Pink \r\n"); 
+                    
+                    rgbControl(238, 30, 30); 
+
+                    reportData.dev_status.led_color = LED_Pink; 
                 }
                 break;
             case SetLED_R:
                 os_printf("########## led_r is %d\n", issued->attr_vals.led_r); 
-                reportData.dev_status.led_r = issued->attr_vals.led_r; 
 
-                rgbControl(reportData.dev_status.led_r, reportData.dev_status.led_g, reportData.dev_status.led_b); 
+                valueR = X2Y(LED_R_RATIO, LED_R_ADDITION, issued->attr_vals.led_r); 
+                
+                rgbControl(
+                   valueR,
+                   X2Y(LED_G_RATIO, LED_G_ADDITION, reportData.dev_status.led_g),
+                   X2Y(LED_B_RATIO, LED_B_ADDITION, reportData.dev_status.led_b)); 
+                
+                reportData.dev_status.led_r = issued->attr_vals.led_r; 
                 break;
             case SetLED_G:
                 os_printf("########## led_g is %d\n", issued->attr_vals.led_g); 
+                
+                valueG = X2Y(LED_G_RATIO, LED_G_ADDITION, issued->attr_vals.led_g); 
+                
+                rgbControl(
+                   X2Y(LED_R_RATIO, LED_R_ADDITION, reportData.dev_status.led_r),
+                   valueG,
+                   X2Y(LED_B_RATIO, LED_B_ADDITION, reportData.dev_status.led_b)); 
+                
                 reportData.dev_status.led_g = issued->attr_vals.led_g; 
-
-                rgbControl(reportData.dev_status.led_r, reportData.dev_status.led_g, reportData.dev_status.led_b); 
                 break;
             case SetLED_B:
                 os_printf("########## led_b is %d\n", issued->attr_vals.led_b); 
+                
+                valueB = X2Y(LED_B_RATIO, LED_B_ADDITION, issued->attr_vals.led_b); 
+                
+                rgbControl(
+                   X2Y(LED_R_RATIO, LED_R_ADDITION, reportData.dev_status.led_r),
+                   X2Y(LED_G_RATIO, LED_G_ADDITION, reportData.dev_status.led_g),
+                   valueB); 
+                
                 reportData.dev_status.led_b = issued->attr_vals.led_b; 
-
-                rgbControl(reportData.dev_status.led_r, reportData.dev_status.led_g, reportData.dev_status.led_b); 
                 break;
             case SetMotor:
-                os_printf("########## motor speed is %d\n", issued->attr_vals.motor_speed); 
-                value = Y2X(MOTOR_SPEED_RATIO, MOTOR_SPEED_ADDITION, issued->attr_vals.motor_speed); 
-                reportData.dev_status.motor = exchangeBytes(value); 
+                os_printf("########## motor speed is %d\n", issued->attr_vals.motor); 
                 
-                motorControl((_MOTOR_T)issued->attr_vals.motor_speed); 
+                valueMotor = X2Y(MOTOR_SPEED_RATIO, MOTOR_SPEED_ADDITION, exchangeBytes(issued->attr_vals.motor)); 
+                
+                motorControl(valueMotor); 
+                
+                reportData.dev_status.motor = issued->attr_vals.motor; 
                 break;
             default:
                 break;

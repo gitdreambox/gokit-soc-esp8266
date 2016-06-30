@@ -65,8 +65,6 @@ LOCAL os_timer_t userTimer;
 LOCAL key_typedef_t * singleKey[GPIO_KEY_NUM];
 LOCAL keys_typedef_t keys;
 
-extern gizwits_protocol_t gizwitsProtocol; 
-
 LOCAL uint8_t ICACHE_FLASH_ATTR gizThHandle(uint8_t * curtem, uint8_t * curhumi)
 {
     static uint16_t thCtime = 0;

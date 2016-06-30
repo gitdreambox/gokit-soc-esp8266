@@ -78,7 +78,7 @@ typedef struct
     uint8_t led_r;
     uint8_t led_g;
     uint8_t led_b;
-    uint16_t motor_speed;
+    uint16_t motor;
 }gizwits_attr_vals; 
 
 //对应协议“4.9 设备MCU向WiFi模组主动上报当前状态”
@@ -199,14 +199,12 @@ typedef struct
     event_info_t processEvent;
 }gizwits_protocol_t;
 
-extern gizwits_protocol_t gizwitsProtocol;
-
 uint16_t exchangeBytes(uint16_t value);
 uint32 Y2X(uint32 ratio, int32 addition, uint32 pre_value);
 int32 X2Y(uint32 ratio, int32 addition, uint32 pre_value);
 void gizSetMode(uint8_t mode);
 void gizConfigReset(void);
-int32_t gizIssuedProcess(uint8_t * inData, uint32_t inLen, uint8_t * outData, int32_t * outLen); 
+int32_t gizIssuedProcess(uint8_t * inData, uint32_t inLen, uint8_t * outData, int32_t * outLen);
 int32_t gizReportData(uint8_t action, uint8_t *data, uint32_t len);
 uint32_t gizGetTimeStamp(void);
 void gizwitsInit(void);
