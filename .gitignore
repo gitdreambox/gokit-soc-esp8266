@@ -1,0 +1,12 @@
+*.o
+*.d
+*.S
+*.dump
+*.out
+*.files
+*.swp
+tags
+app/.output/
+app/driver/.output/
+app/user/.output/
+bin/upgrade/
