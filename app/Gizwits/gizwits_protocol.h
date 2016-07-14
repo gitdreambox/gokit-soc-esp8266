@@ -10,7 +10,7 @@
 ******************************************************/
 #define PROTOCOL_VERSION                        "00000001"
 #define P0_VERSION                              "00000001"
-#define PRODUCT_KEY                             "6f3074fe43894547a4f1314bd7e3ae0b"
+#define PRODUCT_KEY                             "your_product_key"
 
 #define BUFFER_LEN_MAX                          900
 
