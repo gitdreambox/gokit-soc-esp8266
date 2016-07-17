@@ -10,7 +10,7 @@
 ******************************************************/
 #define PROTOCOL_VERSION                        "00000001"
 #define P0_VERSION                              "00000001"
-#define PRODUCT_KEY                             "6f3074fe43894547a4f1314bd7e3ae0b"
+#define PRODUCT_KEY                             "your_product_key"
 
 #define BUFFER_LEN_MAX                          900
 
@@ -21,8 +21,6 @@
 #define MIN_INTERVAL_TIME                       2000                        //The minimum interval for sending
 #define MAX_SOC_TIMOUT                          1000                        //1s
 #define TIM_REP_TIMOUT                          (600000 / MAX_SOC_TIMOUT)   //600s Regularly report
-#define TH_TIMEOUT                              (1000 / SOC_TIME_OUT)       //Temperature and humidity detection minimum time
-#define INF_TIMEOUT                             (500 / SOC_TIME_OUT)
 
 /*****************************************************
 * task相关定义
@@ -80,8 +78,8 @@ typedef struct
     uint8_t led_r;
     uint8_t led_g;
     uint8_t led_b;
-    uint16_t motor_speed;
-}gizwits_attr_vals;
+    uint16_t motor;
+}gizwits_attr_vals; 
 
 //对应协议“4.9 设备MCU向WiFi模组主动上报当前状态”
 typedef struct
@@ -92,9 +90,9 @@ typedef struct
     uint8_t led_r;
     uint8_t led_g;
     uint8_t led_b;
-    int16_t motor;
+    uint16_t motor;
     uint8_t infrared;
-    int8_t temperature;
+    uint8_t temperature;
     uint8_t humidity;
     uint8_t alert;
     uint8_t fault;
@@ -111,7 +109,6 @@ typedef struct
     uint8_t action;
     dev_status_t dev_status;
 }gizwits_report_t;
-
 
 /*****************************************************
 * WiFi模组工作状态
@@ -201,8 +198,6 @@ typedef struct
     gizwits_issued_t issuedData;
     event_info_t processEvent;
 }gizwits_protocol_t;
-
-extern gizwits_protocol_t gizwitsProtocol;
 
 uint16_t exchangeBytes(uint16_t value);
 uint32 Y2X(uint32 ratio, int32 addition, uint32 pre_value);
