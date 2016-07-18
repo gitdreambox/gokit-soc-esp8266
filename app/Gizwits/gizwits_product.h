@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include "gizwits_protocol.h"
 
-#define HARDWARE_VERSION                        "03000001"
+#define HARDWARE_VERSION                        "03000002"
 #define SOFTWARE_VERSION                        "03000200"
 #define SDK_VERSION                             "13"
 

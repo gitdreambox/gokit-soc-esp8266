@@ -8,8 +8,8 @@
 /*****************************************************
 * gokit相关定义
 ******************************************************/
-#define PROTOCOL_VERSION                        "00000001"
-#define P0_VERSION                              "00000001"
+#define PROTOCOL_VERSION                        "00000004"
+#define P0_VERSION                              "00000002"
 #define PRODUCT_KEY                             "your_product_key"
 
 #define BUFFER_LEN_MAX                          900
