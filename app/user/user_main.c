@@ -1,18 +1,22 @@
-/******************************************************************************
- * Copyright 2013-2014 Espressif Systems (Wuxi)
- *
- * FileName: user_main.c
- *
- * Description: entry file of user application
- *
- * Modification history:
- *     2014/1/1, v1.0 create this file.
-*******************************************************************************/
+/**
+************************************************************
+* @file         user_main.c
+* @brief        SOC版 入口文件
+* @author       Gizwits
+* @date         2016-09-05
+* @version      V03010201
+* @copyright    Gizwits
+* 
+* @note         机智云.只为智能硬件而生
+*               Gizwits Smart Cloud  for Smart Products
+*               链接|增值ֵ|开放|中立|安全|自有|自由|生态
+*               www.gizwits.com
+*
+***********************************************************/
 #include "ets_sys.h"
 #include "osapi.h"
 
 #include "user_interface.h"
-
 #include "user_devicefind.h"
 #include "user_webserver.h"
 #include "gagent_external.h"
@@ -22,6 +26,7 @@
 #include "driver/hal_motor.h"
 #include "driver/hal_rgb_led.h"
 #include "driver/hal_temp_hum.h"
+
 
 #if ESP_PLATFORM
 #include "user_esp_platform.h"
@@ -39,161 +44,181 @@ unsigned int default_private_key_len = 0;
 #endif
 #endif
 
-#define TaskQueueLen    200
-LOCAL  os_event_t   TaskQueue[TaskQueueLen];
+/**@name Gagent模块相关系统任务参数
+* @{
+*/
+#define TaskQueueLen    200                                                 ///< 消息队列总长度
+LOCAL  os_event_t   TaskQueue[TaskQueueLen];                                ///< 消息队列
+/**@} */
 
-#define userQueueLen    200
-LOCAL os_event_t userTaskQueue[userQueueLen]; 
+/**@name Gizwits模块相关系统任务参数
+* @{
+*/
+#define userQueueLen    200                                                 ///< 消息队列总长度
+LOCAL os_event_t userTaskQueue[userQueueLen];                               ///< 消息队列
+/**@} */
 
-#define USER_TIME_MS 100
-LOCAL os_timer_t userTimer; 
-#define TH_TIMEOUT                              (1000 / USER_TIME_MS)       //Temperature and humidity detection minimum time
-#define INF_TIMEOUT                             (500 / USER_TIME_MS)    
+/**@name 用户定时器相关参数
+* @{
+*/
+#define USER_TIME_MS 100                                                    ///< 定时时间，单位：毫秒
+LOCAL os_timer_t userTimer;                                                 ///< 用户定时器结构体
+#define TH_TIMEOUT                              (1000 / USER_TIME_MS)       ///< Temperature and humidity detection minimum time
+#define INF_TIMEOUT                             (500 / USER_TIME_MS)        ///< Infrared detection minimum time
 
-/*****************************************************
- * * I/O��ض���
- * ******************************************************/
-#define GPIO_KEY_NUM                            2
-#define KEY_0_IO_MUX                            PERIPHS_IO_MUX_GPIO0_U
-#define KEY_0_IO_NUM                            0
-#define KEY_0_IO_FUNC                           FUNC_GPIO0
+/**@} */ 
 
-#define KEY_1_IO_MUX                            PERIPHS_IO_MUX_MTMS_U
-#define KEY_1_IO_NUM                            14
-#define KEY_1_IO_FUNC                           FUNC_GPIO14
+/**@name 按键相关定义 
+* @{
+*/
+#define GPIO_KEY_NUM                            2                           ///< 定义按键成员总数
+#define KEY_0_IO_MUX                            PERIPHS_IO_MUX_GPIO0_U      ///< ESP8266 GPIO 功能
+#define KEY_0_IO_NUM                            0                           ///< ESP8266 GPIO 编号
+#define KEY_0_IO_FUNC                           FUNC_GPIO0                  ///< ESP8266 GPIO 名称
+#define KEY_1_IO_MUX                            PERIPHS_IO_MUX_MTMS_U       ///< ESP8266 GPIO 功能
+#define KEY_1_IO_NUM                            14                          ///< ESP8266 GPIO 编号
+#define KEY_1_IO_FUNC                           FUNC_GPIO14                 ///< ESP8266 GPIO 名称
+LOCAL key_typedef_t * singleKey[GPIO_KEY_NUM];                              ///< 定义单个按键成员数组指针
+LOCAL keys_typedef_t keys;                                                  ///< 定义总的按键模块结构体指针    
+/**@} */
 
-LOCAL key_typedef_t * singleKey[GPIO_KEY_NUM];
-LOCAL keys_typedef_t keys;
+/** 用户区当前设备状态结构体*/
+dataPoint_t currentDataPoint;
 
-LOCAL uint8_t ICACHE_FLASH_ATTR gizThHandle(uint8_t * curtem, uint8_t * curhumi)
+/**
+* key1按键短按处理
+* @param none
+* @return none
+*/
+LOCAL void ICACHE_FLASH_ATTR key1ShortPress(void)
 {
-    static uint16_t thCtime = 0;
-    uint8_t curTem = 0, curHum = 0;
-    uint8_t ret = 0;
-    
-    if(TH_TIMEOUT < thCtime)
-    {
-        thCtime = 0;
-
-        ret = dh11Read(&curTem, &curHum);
-        
-        if(1 == ret)
-        {
-            os_printf("@@@@ dh11Read error ! \n");
-            return 0;
-        }
-
-        //Assignment to report data
-        *curtem = curTem; 
-        *curhumi = curHum; 
-
-        return (1);
-    }
-
-    thCtime++;
-
-    return (0);
+    os_printf("#### key1 short press \n");
 }
 
-LOCAL uint8_t ICACHE_FLASH_ATTR gokitIrHandle(uint8_t * curir)
+/**
+* key1按键长按处理
+* @param none
+* @return none
+*/
+LOCAL void ICACHE_FLASH_ATTR key1LongPress(void)
 {
-    static uint32 irCtime = 0;
-    uint8_t irValue = 0;
-    
-    if(INF_TIMEOUT < irCtime)
-    {
-        irCtime = 0;
-
-        irValue = irUpdateStatus();
-
-        *curir = irValue; 
-
-        return (1); 
-    }
-
-    irCtime++;
-
-    return (0);
+    os_printf("#### key1 long press, default setup\n");
+    gizMSleep();
+    gizwitsSetMode(WIFI_RESET_MODE);
 }
 
-LOCAL void ICACHE_FLASH_ATTR user_handle(void)
-{
-    uint8_t ret = 0; 
-    uint8_t curTemperature = 0; 
-    uint8_t curHumidity = 0; 
-    uint8_t curir = 0; 
-    
-    //Temperature and humidity sensors reported conditional
-    ret = gizThHandle(&curTemperature, &curHumidity);
-    if(1 == ret)
-    {
-        reportData.dev_status.temperature = Y2X(TEMPERATURE_RATIO, TEMPERATURE_ADDITION, curTemperature);
-        reportData.dev_status.humidity = Y2X(HUMIDITY_RATIO, HUMIDITY_ADDITION, curHumidity); 
-    }
-    
-    //Infrared sensors reported conditional
-    ret = gokitIrHandle(&curir); 
-    if(1 == ret)
-    {
-        reportData.dev_status.infrared = curir; 
-    }
-    
-    gizReportData(ACTION_REPORT_DEV_STATUS, (uint8_t *)&reportData, sizeof(gizwits_report_t)); 
-}
-
+/**
+* key2按键短按处理
+* @param none
+* @return none
+*/
 LOCAL void ICACHE_FLASH_ATTR key2ShortPress(void)
 {
-    os_printf("#### key2, soft ap mode \n");
+    os_printf("#### key2 short press, soft ap mode \n");
 
-    rgbControl(250, 0, 0);
-
-    gizSetMode(1);
+	rgbControl(250, 0, 0);
+    gizwitsSetMode(WIFI_SOFTAP_MODE);
 }
 
+/**
+* key2按键长按处理
+* @param none
+* @return none
+*/
 LOCAL void ICACHE_FLASH_ATTR key2LongPress(void)
 {
-    os_printf("#### key2, airlink mode\n");
+    os_printf("#### key2 long press, airlink mode\n");
 
     rgbControl(0, 250, 0);
 
-    gizSetMode(2);
+    gizwitsSetMode(WIFI_AIRLINK_MODE);
 }
 
-LOCAL void ICACHE_FLASH_ATTR key1ShortPress(void)
+/**
+* 按键初始化
+* @param none
+* @return none
+*/
+LOCAL void ICACHE_FLASH_ATTR keyInit(void)
 {
-    os_printf("#### key1, press \n");
-
-    rgbControl(0, 0, 250);
+    singleKey[0] = keyInitOne(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,
+                                key1LongPress, key1ShortPress);
+    singleKey[1] = keyInitOne(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
+                                key2LongPress, key2ShortPress);
+    keys.singleKey = singleKey;
+    keyParaInit(&keys);
 }
 
-LOCAL void ICACHE_FLASH_ATTR key1LongPress(void)
-{
-    os_printf("#### key1, default setup\n");
-    mSleep();
-    gizConfigReset();
-}
+/**
+* 用户数据获取
 
+* 此处需要用户实现除可写数据点之外所有传感器数据的采集,可自行定义采集频率和设计数据过滤算法
+* @param none
+* @return none
+*/
 void ICACHE_FLASH_ATTR userTimerFunc(void)
 {
-    user_handle();
+	uint8_t ret = 0; 
+    uint8_t curTemperature = 0; 
+    uint8_t curHumidity = 0; 
+    uint8_t curIr = 0; 
+    static uint8_t thCtime = 0;
+	static uint8_t irCtime = 0;
+
+	thCtime++;
+	irCtime++;
+
+	if(INF_TIMEOUT < irCtime)
+    {
+        irCtime = 0;
+
+        curIr = irUpdateStatus();
+		currentDataPoint.valueInfrared = curIr;
+	}
+	
+	if(TH_TIMEOUT < thCtime)
+    {
+        thCtime = 0;
+
+        ret = dh11Read(&curTemperature, &curHumidity);
+        
+        if(0 == ret)
+    	{
+    		currentDataPoint.valueTemperature = curTemperature;
+        	currentDataPoint.valueHumidity = curHumidity; 
+    	}
+		else
+        {
+            os_printf("@@@@ dh11Read error ! \n");
+        }
+	}
+
+    system_os_post(USER_TASK_PRIO_0, SIG_UPGRADE_DATA, 0);
 }
 
+/**
+* @brief 用户相关系统事件回调函数
+
+* 在该函数中用户可添加相应事件的处理
+* @param none
+* @return none
+*/
 void ICACHE_FLASH_ATTR gizwitsUserTask(os_event_t * events)
 {
     uint8_t i = 0;
-    uint8 vchar = 0;
+    uint8_t vchar = 0;
 
     if(NULL == events)
     {
-        os_printf("!!! gizwitsUserTask Error \n"); 
+        os_printf("!!! gizwitsUserTask Error \n");
     }
 
     vchar = (uint8)(events->par);
 
     switch(events->sig)
     {
-//  case SIG_INFRARED_READ:
-//      gizIrReadHandle();
+    case SIG_UPGRADE_DATA:
+        gizwitsHandle((dataPoint_t *)&currentDataPoint);
         break;
     default:
         os_printf("---error sig! ---\n");
@@ -201,16 +226,17 @@ void ICACHE_FLASH_ATTR gizwitsUserTask(os_event_t * events)
     }
 }
 
-/******************************************************************************
- * FunctionName : user_init
- * Description  : entry of user application, init user function here
- * Parameters   : none
- * Returns      : none
-*******************************************************************************/
-void user_init(void)
+/**
+* @brief 程序入口函数
+
+* 在该函数中完成用户相关的初始化
+* @param none
+* @return none
+*/
+void ICACHE_FLASH_ATTR user_init(void)
 {
-    struct devAttrs attrs;
     uint32 system_free_size = 0;
+	struct devAttrs attrs;
 
     wifi_station_set_auto_connect(1);
     wifi_set_sleep_type(NONE_SLEEP_T);//set none sleep mode
@@ -242,24 +268,16 @@ void user_init(void)
     {
         os_printf( "---UPGRADE_FW_BIN2---\n");
     }
-    
+
     //user init
-    
     //rgb led init
     rgbGpioInit();
     rgbLedInit();
 
-    //key init
-    singleKey[0] = keyInitOne(KEY_0_IO_NUM, KEY_0_IO_MUX, KEY_0_IO_FUNC,
-                                key1LongPress, key1ShortPress);
-    singleKey[1] = keyInitOne(KEY_1_IO_NUM, KEY_1_IO_MUX, KEY_1_IO_FUNC,
-                                key2LongPress, key2ShortPress);
-    keys.key_num = GPIO_KEY_NUM;
-    keys.key_timer_ms = 10;
-    keys.singleKey = singleKey;
-    keyParaInit(&keys);
-
-    //motor init
+	//key init
+    keyInit();
+    
+	//motor init
     motorInit();
     motorControl(MOTOR_SPEED_DEFAULT);
     
@@ -268,8 +286,8 @@ void user_init(void)
 
     //Infrared init
     irInit(); 
-
-    //gizwits Init
+    
+    //gizwits InitSIG_UPGRADE_DATA
     gizwitsInit();
 
     system_os_task(gagentProcessRun, USER_TASK_PRIO_1, TaskQueue, TaskQueueLen);
@@ -293,11 +311,10 @@ void user_init(void)
 
     system_os_task(gizwitsUserTask, USER_TASK_PRIO_0, userTaskQueue, userQueueLen);
 
-    //gokit timer start
+    //user timer 
     os_timer_disarm(&userTimer);
     os_timer_setfn(&userTimer, (os_timer_func_t *)userTimerFunc, NULL);
     os_timer_arm(&userTimer, USER_TIME_MS, 1);
 
     os_printf("--- system_free_size = %d ---\n", system_get_free_heap_size());
 }
-
