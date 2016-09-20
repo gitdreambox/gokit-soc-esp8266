@@ -36,7 +36,7 @@
 /**@name Product Key (产品标识码)
 * @{
 */
-#define PRODUCT_KEY                   "6f3074fe43894547a4f1314bd7e3ae0b"
+#define PRODUCT_KEY                   "your-product-key"
 /**@} */
 
 #define BUFFER_LEN_MAX                900
