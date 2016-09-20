@@ -25,8 +25,6 @@
 /** 用户区当前设备状态结构体*/
 extern dataPoint_t currentDataPoint;
 
-extern gizwitsProtocol_t gizwitsProtocol;
-
 /**@name Gizwits 用户API接口
 * @{
 */
@@ -80,9 +78,7 @@ int8_t ICACHE_FLASH_ATTR gizwitsEventProcess(eventInfo_t *info, uint8_t *data, u
         switch(currentDataPoint.valueLED_Color)
         {
           case LED_COLOR_VALUE0:
-            rgbControl(gizwitsProtocol.gizLastDataPoint.valueLED_R,
-                gizwitsProtocol.gizLastDataPoint.valueLED_G,
-                gizwitsProtocol.gizLastDataPoint.valueLED_B);
+            rgbControl(currentDataPoint.valueLED_R,currentDataPoint.valueLED_G,currentDataPoint.valueLED_B);
             break;
           case LED_COLOR_VALUE1:
             rgbControl(254, 254, 0);
@@ -101,23 +97,17 @@ int8_t ICACHE_FLASH_ATTR gizwitsEventProcess(eventInfo_t *info, uint8_t *data, u
       case EVENT_LED_R:
         currentDataPoint.valueLED_R = dataPointPtr->valueLED_R;
         os_printf("Evt:EVENT_LED_R %d\n",currentDataPoint.valueLED_R);
-        rgbControl(currentDataPoint.valueLED_R,
-                gizwitsProtocol.gizLastDataPoint.valueLED_G,
-                gizwitsProtocol.gizLastDataPoint.valueLED_B); 
+        rgbControl(currentDataPoint.valueLED_R,currentDataPoint.valueLED_G,currentDataPoint.valueLED_B); 
         break;
       case EVENT_LED_G:
         currentDataPoint.valueLED_G = dataPointPtr->valueLED_G;
         os_printf("Evt:EVENT_LED_G %d\n",currentDataPoint.valueLED_G);
-        rgbControl(gizwitsProtocol.gizLastDataPoint.valueLED_R,
-                currentDataPoint.valueLED_G,
-                gizwitsProtocol.gizLastDataPoint.valueLED_B);
+        rgbControl(currentDataPoint.valueLED_R,currentDataPoint.valueLED_G,currentDataPoint.valueLED_B);
         break;
       case EVENT_LED_B:
         currentDataPoint.valueLED_B = dataPointPtr->valueLED_B;
         os_printf("Evt:EVENT_LED_B %d\n",currentDataPoint.valueLED_B);
-        rgbControl(gizwitsProtocol.gizLastDataPoint.valueLED_R,
-                gizwitsProtocol.gizLastDataPoint.valueLED_G,
-                currentDataPoint.valueLED_B);
+        rgbControl(currentDataPoint.valueLED_R,currentDataPoint.valueLED_G,currentDataPoint.valueLED_B);
         break;
       case EVENT_MOTOR_SPEED:
         currentDataPoint.valueMotor_Speed = dataPointPtr->valueMotor_Speed;
