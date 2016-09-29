@@ -19,7 +19,6 @@
 
 bool ICACHE_FLASH_ATTR irUpdateStatus(void)
 {
-    //if(GET_INF)
     if(gpio16InputGet())
     {
         return 0;

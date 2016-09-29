@@ -19,8 +19,8 @@
 static void ICACHE_FLASH_ATTR rgbDelay(unsigned int us)
 {
     /* Define your delay function */
-    
-    volatile unsigned  int i=0;
+    volatile unsigned int i=0;
+	
     for(i=0; i<us; i++);
 }
 
@@ -38,10 +38,14 @@ static void ICACHE_FLASH_ATTR clkProduce(void)
 /**********  send 32 zero ********************/
 static void ICACHE_FLASH_ATTR send_32zero(void)
 {
-    unsigned char i;
+    uint8_t i;
+	
     SDA_LOW;   // SDA=0
     for (i=0; i<32; i++)
-        clkProduce();
+	{
+		clkProduce();
+	}
+	
 }
 
 
