@@ -15,7 +15,6 @@
 ***********************************************************/
 #include "ets_sys.h"
 #include "osapi.h"
-
 #include "user_interface.h"
 #include "user_devicefind.h"
 #include "user_webserver.h"
@@ -92,7 +91,8 @@ dataPoint_t currentDataPoint;
 */
 LOCAL void ICACHE_FLASH_ATTR key1ShortPress(void)
 {
-    os_printf("KEY1 short press ,Production Mode\n");
+    os_printf("#### KEY1 short press ,Production Mode\n");
+    gizMSleep();
     gizwitsSetMode(WIFI_PRODUCTION_TEST);
 }
 
@@ -236,8 +236,8 @@ void ICACHE_FLASH_ATTR gizwitsUserTask(os_event_t * events)
 */
 void ICACHE_FLASH_ATTR user_init(void)
 {
+    struct devAttrs attrs;
     uint32 system_free_size = 0;
-	struct devAttrs attrs;
 
     wifi_station_set_auto_connect(1);
     wifi_set_sleep_type(NONE_SLEEP_T);//set none sleep mode

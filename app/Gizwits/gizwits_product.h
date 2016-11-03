@@ -4,7 +4,7 @@
 * @brief        对应gizwits_product.c的头文件(包含产品软硬件版本定义)
 * @author       Gizwits
 * @date         2016-09-05
-* @version      V03010201
+* @version      V03000202
 * @copyright    Gizwits
 * 
 * @note         机智云.只为智能硬件而生

@@ -954,7 +954,7 @@ int8_t ICACHE_FLASH_ATTR gizwitsHandle(dataPoint_t *dataPoint)
     {
         os_printf("!!! gizReportData Error \n");
 
-        return -1;
+        return (-1);
     }
 
     //Regularly report conditional
