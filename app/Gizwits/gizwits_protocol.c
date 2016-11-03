@@ -69,16 +69,6 @@ uint32 ICACHE_FLASH_ATTR gizTimeMs(void)
 }
 
 /**
-* @brief 查询系统时间，单位：毫秒
-* @param none
-* @return 系统时间，单位：秒
-*/
-uint32 ICACHE_FLASH_ATTR gizTimeS(void)
-{
-    return (system_get_time() / 1000*1000); 
-}
-
-/**
 * @brief 获得与上次查询的间隔时间，单位：毫秒
 * @param[in] lastRpMs 传入上次查询的时间
 * @return 返回当前与上次查询之间的间隔时间，单位：毫秒
@@ -135,8 +125,6 @@ static uint32_t ICACHE_FLASH_ATTR gizExchangeWord(uint32_t  value)
         ((value & 0x00FF0000) >> 8) |
         ((value & 0xFF000000) >> 24) ;
 }
-
-
 
 /**
 * @brief 数组缓冲区网络字节序转换
@@ -815,20 +803,6 @@ int32_t ICACHE_FLASH_ATTR gizIssuedProcess(uint8_t *inData, uint32_t inLen,uint8
 }
 
 /**
-* @brief 获得系统时间戳
-* @param none
-* @return 返回uint32_t型的系统时间
-*/
-uint32_t ICACHE_FLASH_ATTR gizGetTimeStamp(void)
-{
-    _tm tmValue;
-
-    gagentGetNTP(&tmValue);
-
-    return tmValue.ntp;
-}
-
-/**
 * @brief 定时器回调函数，在该函数中完成10分钟的定时上报
 * @param none
 * @return none
@@ -909,14 +883,35 @@ void ICACHE_FLASH_ATTR gizTask(os_event_t * events)
 */
 void ICACHE_FLASH_ATTR gizwitsSetMode(uint8_t mode)
 {
-    if(mode == WIFI_RESET_MODE)
+    switch(mode)
     {
-        gagentReset();
+        case WIFI_RESET_MODE:
+            gagentReset();
+            break;
+        case WIFI_SOFTAP_MODE:
+            gagentConfig(mode);
+            break;
+        case WIFI_AIRLINK_MODE:
+            gagentConfig(mode);
+            break;
+        case WIFI_PRODUCTION_TEST:
+            gagentConfig(mode);
+            break;
     }
-    else if((mode == WIFI_SOFTAP_MODE)||(mode == WIFI_AIRLINK_MODE))
-    {
-        gagentConfig(mode);
-    } 
+}
+
+/**
+* @brief 获取网络时间戳接口
+* @param[in] none
+* @return none
+*/
+uint32_t ICACHE_FLASH_ATTR gizwitsGetTimeStamp(void)
+{
+    _tm tmValue;
+
+    gagentGetNTP(&tmValue);
+
+    return tmValue.ntp;
 }
 
 /**

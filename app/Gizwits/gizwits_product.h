@@ -27,11 +27,11 @@
 /**
 * MCU软件版本号
 */
-#define SOFTWARE_VERSION                        "03000201"
+#define SOFTWARE_VERSION                        "03000202"
 /**
 * gagent小版本号，用于OTA升级
 */
-#define SDK_VERSION                             "13"
+#define SDK_VERSION                             "14"
 
 #ifndef SOFTWARE_VERSION
     #error "no define SOFTWARE_VERSION"

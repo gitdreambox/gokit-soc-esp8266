@@ -66,6 +66,7 @@ typedef enum
   WIFI_RESET_MODE = 0x00,                           ///< WIFI模组复位
   WIFI_SOFTAP_MODE,                                 ///< WIFI模组softAP模式
   WIFI_AIRLINK_MODE,                                ///< WIFI模组AirLink模式
+  WIFI_PRODUCTION_TEST,                             ///< MCU请求WiFi模组进入产测模式
 }WIFI_MODE_TYPE_T;
 
 /**@name 数据点相关定义
@@ -275,6 +276,8 @@ typedef enum
     ACTION_REPORT_DEV_STATUS    = 0X04,             ///< 协议4.9 设备MCU向WiFi模组主动上报当前状态 设备MCU发送
     ACTION_W2D_TRANSPARENT_DATA = 0x05,             ///< WiFi到设备MCU透传
     ACTION_D2W_TRANSPARENT_DATA = 0x06,             ///< 设备MCU到WiFi透传
+    CMD_PRODUCTION_TEST         = 0x13,             ///< 命令字，对应协议：4.11 MCU请求WiFi模组进入产测模式 中 设备MCU发送
+    ACK_PRODUCTION_TEST         = 0x14,             ///< 命令字，对应协议：4.11 MCU请求WiFi模组进入产测模式 中 WiFi模组回复
 } action_type_t;
 
 /** WiFi模组工作状态*/
@@ -325,6 +328,7 @@ typedef struct
 * @{
 */
 void gizwitsSetMode(uint8_t mode);
+uint32_t gizwitsGetTimeStamp(void);
 void gizwitsInit(void);
 int8_t gizwitsHandle(dataPoint_t *dataPoint);
 int32_t gizwitsPassthroughData(uint8_t * data, uint32_t len);

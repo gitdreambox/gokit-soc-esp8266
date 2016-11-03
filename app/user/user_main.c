@@ -92,7 +92,8 @@ dataPoint_t currentDataPoint;
 */
 LOCAL void ICACHE_FLASH_ATTR key1ShortPress(void)
 {
-    os_printf("#### key1 short press \n");
+    os_printf("KEY1 short press ,Production Mode\n");
+    gizwitsSetMode(WIFI_PRODUCTION_TEST);
 }
 
 /**
