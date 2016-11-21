@@ -3,8 +3,8 @@
 * @file         gizwits_product.c
 * @brief        Gizwits 控制协议处理,及平台相关的硬件初始化 
 * @author       Gizwits
-* @date         2016-09-05
-* @version      V03010201
+* @date         2016-11-21
+* @version      V03000003
 * @copyright    Gizwits
 * 
 * @note         机智云.只为智能硬件而生

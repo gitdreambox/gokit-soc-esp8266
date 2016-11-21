@@ -1,5 +1,6 @@
-#ifndef GAGENT_EXTERNAL_H
-#define GAGENT_EXTERNAL_H
+#ifndef GAGENT_SOC_H
+#define GAGENT_SOC_H
+#include "os_type.h"
 
 #ifndef MCU_PROTOCOLVER_LEN
 #define MCU_PROTOCOLVER_LEN 8
@@ -9,7 +10,6 @@
 #define MCU_MCUATTR_LEN 8
 #define PK_LEN       32
 #endif
-
 #define SDK_USER_VER_LEN        2
 
 struct devAttrs
@@ -25,17 +25,17 @@ struct devAttrs
 };
 typedef struct
 {
-    unsigned short year;
-    unsigned char month;
-    unsigned char day;
-    unsigned char hour;
-    unsigned char minute;
-    unsigned char second;
-    unsigned int ntp;
+   unsigned short year;
+   unsigned char month;
+   unsigned char day;
+   unsigned char hour;
+   unsigned char minute;
+   unsigned char second;
+   unsigned int ntp;
 }_tm;
 
 void gagentProcessRun(os_event_t *events);
-int32 gagentUploadData(unsigned char *src, unsigned int len);
+int gagentUploadData(unsigned char *src, unsigned int len);
 void gagentGetNTP(_tm *time);
 
 /******************************************************

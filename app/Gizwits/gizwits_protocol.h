@@ -3,8 +3,8 @@
 * @file         gizwits_protocol.h
 * @brief        对应gizwits_protocol.c的头文件 (包含产品相关定义)
 * @author       Gizwits
-* @date         2016-09-05
-* @version      V03010201
+* @date         2016-11-21
+* @version      V03000003
 * @copyright    Gizwits
 * 
 * @note         机智云.只为智能硬件而生

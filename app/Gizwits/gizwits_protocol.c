@@ -3,8 +3,8 @@
 * @file         gizwits_protocol.c
 * @brief        Gizwits协议相关文件 (SDK API 接口函数定义)
 * @author       Gizwits
-* @date         2016-09-05
-* @version      V03010201
+* @date         2016-11-21
+* @version      V03000003
 * @copyright    Gizwits
 * 
 * @note         机智云.只为智能硬件而生
@@ -14,7 +14,7 @@
 *
 ***********************************************************/
 #include "gizwits_protocol.h"
-#include "gagent_external.h"
+#include "gagent_soc.h"
 #include "mem.h"
 #include "driver/hal_infrared.h"
 #include "driver/hal_motor.h"

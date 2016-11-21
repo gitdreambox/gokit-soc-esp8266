@@ -3,8 +3,8 @@
 * @file         gizwits_product.h
 * @brief        对应gizwits_product.c的头文件(包含产品软硬件版本定义)
 * @author       Gizwits
-* @date         2016-09-05
-* @version      V03000202
+* @date         2016-11-21
+* @version      V03000003
 * @copyright    Gizwits
 * 
 * @note         机智云.只为智能硬件而生
@@ -31,7 +31,7 @@
 /**
 * gagent小版本号，用于OTA升级
 */
-#define SDK_VERSION                             "14"
+#define SDK_VERSION                             "20"
 
 #ifndef SOFTWARE_VERSION
     #error "no define SOFTWARE_VERSION"
