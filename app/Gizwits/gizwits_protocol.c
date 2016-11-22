@@ -417,7 +417,7 @@ void ICACHE_FLASH_ATTR gizWiFiStatus(uint16_t value)
 
     if(0 != value)
     {
-        status.value = value;
+        status.value = gizProtocolExchangeBytes(value); 
 
         os_printf("@@@@ GAgentStatus[hex]:%02x | [Bin]:%d,%d,%d,%d,%d,%d \r\n", status.value, status.types.con_m2m, status.types.con_route, status.types.binding, status.types.onboarding, status.types.station, status.types.softap);
 
