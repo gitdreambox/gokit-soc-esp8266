@@ -1,5 +1,6 @@
 #ifndef GAGENT_SOC_H
 #define GAGENT_SOC_H
+
 #include "os_type.h"
 
 #ifndef MCU_PROTOCOLVER_LEN
@@ -14,13 +15,13 @@
 
 struct devAttrs
 {
+    unsigned short mBindEnableTime;
     unsigned char mstrProtocolVer[MCU_PROTOCOLVER_LEN];
     unsigned char mstrP0Ver[MCU_P0VER_LEN];
     unsigned char mstrDevHV[MCU_HARDVER_LEN];
     unsigned char mstrDevSV[MCU_SOFTVER_LEN];
     unsigned char mstrProductKey[PK_LEN];
     unsigned char mDevAttr[MCU_MCUATTR_LEN];
-    unsigned char mBindEnableTime;
     unsigned char mstrSdkVerLow[SDK_USER_VER_LEN];
 };
 typedef struct
@@ -46,6 +47,11 @@ void gagentGetNTP(_tm *time);
 void gagentConfig(unsigned char configType);
 void gagentReset(void);
 void gagentInit(struct devAttrs attrs);
+/**********************************************************
+* @function GAgentEnableBind
+* @brief    允许用户绑定设备
+**********************************************************/
+void GAgentEnableBind();
 
 #endif /* #endif GAGENT_EXTERNAL_H */
 

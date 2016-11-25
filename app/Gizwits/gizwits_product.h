@@ -28,10 +28,15 @@
 * MCU软件版本号
 */
 #define SOFTWARE_VERSION                        "03000003"
+
 /**
 * gagent小版本号，用于OTA升级
+* OTA硬件版本号: 00ESP826
+* OTA软件版本号: 040203xx       // “xx”为SDK_VERSION 
 */
 #define SDK_VERSION                             "20"
+#define DEV_IS_CC   0                         ///< 设备是否为中控类,0表示否,1表示是
+#define NINABLETIME  60                        ///< 绑定时间
 
 #ifndef SOFTWARE_VERSION
     #error "no define SOFTWARE_VERSION"

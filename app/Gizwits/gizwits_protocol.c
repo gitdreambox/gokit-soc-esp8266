@@ -15,15 +15,22 @@
 ***********************************************************/
 #include "gizwits_protocol.h"
 #include "gagent_soc.h"
+#include "gizwits_product.h"
 #include "mem.h"
 #include "driver/hal_infrared.h"
 #include "driver/hal_motor.h"
 #include "driver/hal_rgb_led.h"
 #include "driver/hal_temp_hum.h"
 
-
 /** 协议全局变量 **/
 gizwitsProtocol_t gizwitsProtocol;
+
+/**@name Gagent模块相关系统任务参数
+* @{
+*/
+#define TaskQueueLen    200                                                 ///< 消息队列总长度
+LOCAL  os_event_t   TaskQueue[TaskQueueLen];                                ///< 消息队列
+/**@} */
 
 /** 系统任务相关参数 */
 #define gizwitsTaskQueueLen    200                              ///< gizwits协议消息队列
@@ -878,7 +885,7 @@ void ICACHE_FLASH_ATTR gizTask(os_event_t * events)
 
 * 用户可以调用该接口使WiFi模组进入相应的配置模式或者复位模组
 
-* @param[in] mode 配置模式选择 => 0x00:模组复位 ;0x01:SoftAp模式 ;0x02:AirLink模式 ;0x03:产测模式. 
+* @param[in] mode 配置模式选择 => 0x00:模组复位 ;0x01:SoftAp模式 ;0x02:AirLink模式 ;0x03:产测模式;0x04:允许用户绑定设备
 * @return 错误命令码
 */
 void ICACHE_FLASH_ATTR gizwitsSetMode(uint8_t mode)
@@ -889,13 +896,14 @@ void ICACHE_FLASH_ATTR gizwitsSetMode(uint8_t mode)
             gagentReset();
             break;
         case WIFI_SOFTAP_MODE:
-            gagentConfig(mode);
-            break;
         case WIFI_AIRLINK_MODE:
-            gagentConfig(mode);
-            break;
         case WIFI_PRODUCTION_TEST:
             gagentConfig(mode);
+            break;
+        case WIFI_NINABLE_MODE:
+            GAgentEnableBind();
+            break;
+        default :
             break;
     }
 }
@@ -927,15 +935,37 @@ uint32_t ICACHE_FLASH_ATTR gizwitsGetTimeStamp(void)
 void ICACHE_FLASH_ATTR gizwitsInit(void)
 {
     int16_t value = 0;
+    struct devAttrs attrs;
+    os_memset((uint8_t *)&gizwitsProtocol, 0, sizeof(gizwitsProtocol_t));
 
-	os_memset((uint8_t *)&gizwitsProtocol, 0, sizeof(gizwitsProtocol_t));
-	
     system_os_task(gizTask, USER_TASK_PRIO_2, gizwitsTaskQueue, gizwitsTaskQueueLen);
 
     //gokit timer start
     os_timer_disarm(&gizTimer);
     os_timer_setfn(&gizTimer, (os_timer_func_t *)gizTimerFunc, NULL);
     os_timer_arm(&gizTimer, MAX_SOC_TIMOUT, 1);
+
+    //Gagent
+    system_os_task(gagentProcessRun, USER_TASK_PRIO_1, TaskQueue, TaskQueueLen);
+
+    attrs.mBindEnableTime = gizProtocolExchangeBytes(NINABLETIME);
+    memset((uint8_t *)attrs.mDevAttr, 0, 8);
+    if(DEV_IS_CC)
+    {
+        attrs.mDevAttr[0] |= 0x01<<0;
+    }
+    else
+    {
+        attrs.mDevAttr[0] |= 0x0<<0;
+    }
+    attrs.mDevAttr[0] |= (0x01<<1);
+    os_memcpy(attrs.mstrDevHV, HARDWARE_VERSION, os_strlen(HARDWARE_VERSION));
+    os_memcpy(attrs.mstrDevSV, SOFTWARE_VERSION, os_strlen(SOFTWARE_VERSION));
+    os_memcpy(attrs.mstrP0Ver, P0_VERSION, os_strlen(P0_VERSION));
+    os_memcpy(attrs.mstrProductKey, PRODUCT_KEY, os_strlen(PRODUCT_KEY));
+    os_memcpy(attrs.mstrProtocolVer, PROTOCOL_VERSION, os_strlen(PROTOCOL_VERSION));
+    os_memcpy(attrs.mstrSdkVerLow, SDK_VERSION, os_strlen(SDK_VERSION));
+    gagentInit(attrs);
 
     os_printf("gizwitsInit OK \r\n");
 }

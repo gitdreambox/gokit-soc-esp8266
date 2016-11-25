@@ -16,9 +16,9 @@
 #include "ets_sys.h"
 #include "osapi.h"
 #include "user_interface.h"
+#include "gagent_soc.h"
 #include "user_devicefind.h"
 #include "user_webserver.h"
-#include "gagent_soc.h"
 #include "gizwits_product.h"
 #include "driver/hal_key.h"
 #include "driver/hal_infrared.h"
@@ -42,13 +42,6 @@ unsigned char *default_private_key;
 unsigned int default_private_key_len = 0;
 #endif
 #endif
-
-/**@name Gagent模块相关系统任务参数
-* @{
-*/
-#define TaskQueueLen    200                                                 ///< 消息队列总长度
-LOCAL  os_event_t   TaskQueue[TaskQueueLen];                                ///< 消息队列
-/**@} */
 
 /**@name Gizwits模块相关系统任务参数
 * @{
@@ -236,7 +229,6 @@ void ICACHE_FLASH_ATTR gizwitsUserTask(os_event_t * events)
 */
 void ICACHE_FLASH_ATTR user_init(void)
 {
-    struct devAttrs attrs;
     uint32 system_free_size = 0;
 
     wifi_station_set_auto_connect(1);
@@ -290,25 +282,6 @@ void ICACHE_FLASH_ATTR user_init(void)
     
     //gizwits InitSIG_UPGRADE_DATA
     gizwitsInit();
-
-    system_os_task(gagentProcessRun, USER_TASK_PRIO_1, TaskQueue, TaskQueueLen);
-
-    attrs.mBindEnableTime = 0;
-    attrs.mDevAttr[0] = 0x00;
-    attrs.mDevAttr[1] = 0x00;
-    attrs.mDevAttr[2] = 0x00;
-    attrs.mDevAttr[3] = 0x00;
-    attrs.mDevAttr[4] = 0x00;
-    attrs.mDevAttr[5] = 0x00;
-    attrs.mDevAttr[6] = 0x00;
-    attrs.mDevAttr[7] = 0x00;
-    os_memcpy(attrs.mstrDevHV, HARDWARE_VERSION, os_strlen(HARDWARE_VERSION));
-    os_memcpy(attrs.mstrDevSV, SOFTWARE_VERSION, os_strlen(SOFTWARE_VERSION));
-    os_memcpy(attrs.mstrP0Ver, P0_VERSION, os_strlen(P0_VERSION));
-    os_memcpy(attrs.mstrProductKey, PRODUCT_KEY, os_strlen(PRODUCT_KEY));
-    os_memcpy(attrs.mstrProtocolVer, PROTOCOL_VERSION, os_strlen(PROTOCOL_VERSION));
-    os_memcpy(attrs.mstrSdkVerLow, SDK_VERSION, os_strlen(SDK_VERSION));
-    gagentInit(attrs);
 
     system_os_task(gizwitsUserTask, USER_TASK_PRIO_0, userTaskQueue, userQueueLen);
 

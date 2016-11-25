@@ -67,6 +67,7 @@ typedef enum
   WIFI_SOFTAP_MODE,                                 ///< WIFI模组softAP模式
   WIFI_AIRLINK_MODE,                                ///< WIFI模组AirLink模式
   WIFI_PRODUCTION_TEST,                             ///< MCU请求WiFi模组进入产测模式
+  WIFI_NINABLE_MODE,                                ///< MCU请求模组进入可绑定模式
 }WIFI_MODE_TYPE_T;
 
 /**@name 数据点相关定义
@@ -157,9 +158,6 @@ typedef enum
     LED_COLOR_VALUE2 = 2,                           ///< 紫色
     LED_COLOR_VALUE3 = 3,                           ///< 粉色
 } LED_COLOR_ENUM_T;
-
-
-
 
 /** 事件结构体*/
 typedef enum
