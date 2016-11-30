@@ -133,6 +133,8 @@ static uint32_t ICACHE_FLASH_ATTR gizExchangeWord(uint32_t  value)
         ((value & 0xFF000000) >> 24) ;
 }
 
+
+
 /**
 * @brief 数组缓冲区网络字节序转换
 *
@@ -885,7 +887,7 @@ void ICACHE_FLASH_ATTR gizTask(os_event_t * events)
 
 * 用户可以调用该接口使WiFi模组进入相应的配置模式或者复位模组
 
-* @param[in] mode 配置模式选择 => 0x00:模组复位 ;0x01:SoftAp模式 ;0x02:AirLink模式 ;0x03:产测模式;0x04:允许用户绑定设备
+* @param[in] mode 配置模式选择：0x0， 模组复位 ;0x01， SoftAp模式 ;0x02， AirLink模式; 0x03 , 模组进入产测; 0x04:允许用户绑定设备
 * @return 错误命令码
 */
 void ICACHE_FLASH_ATTR gizwitsSetMode(uint8_t mode)
@@ -950,15 +952,8 @@ void ICACHE_FLASH_ATTR gizwitsInit(void)
 
     attrs.mBindEnableTime = gizProtocolExchangeBytes(NINABLETIME);
     memset((uint8_t *)attrs.mDevAttr, 0, 8);
-    if(DEV_IS_CC)
-    {
-        attrs.mDevAttr[0] |= 0x01<<0;
-    }
-    else
-    {
-        attrs.mDevAttr[0] |= 0x0<<0;
-    }
-    attrs.mDevAttr[0] |= (0x01<<1);
+    attrs.mDevAttr[7] |= DEV_IS_GATEWAY<<0;
+    attrs.mDevAttr[7] |= (0x01<<1);
     os_memcpy(attrs.mstrDevHV, HARDWARE_VERSION, os_strlen(HARDWARE_VERSION));
     os_memcpy(attrs.mstrDevSV, SOFTWARE_VERSION, os_strlen(SOFTWARE_VERSION));
     os_memcpy(attrs.mstrP0Ver, P0_VERSION, os_strlen(P0_VERSION));

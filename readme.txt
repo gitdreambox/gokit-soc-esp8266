@@ -12,7 +12,7 @@
 3.烧录固件
   esp_init_data_default.bin          0x3fc000
   blank.bin                          0x3fe000
-  boot_v1.5.bin                      0x00000
+  boot_v1.6.bin                      0x00000
   user1.4096.new.6.bin               0x01000
   
   选项：CrystalFreq=26M  SPI_SPEED=40MHz SPI_MODE=QIO FLASH_SIZE=32Mbit-C1, 其他默认，串口115200

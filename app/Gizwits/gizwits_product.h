@@ -35,8 +35,10 @@
 * OTA软件版本号: 040203xx       // “xx”为SDK_VERSION 
 */
 #define SDK_VERSION                             "20"
-#define DEV_IS_CC   0                         ///< 设备是否为中控类,0表示否,1表示是
-#define NINABLETIME  60                        ///< 绑定时间
+
+
+#define DEV_IS_GATEWAY   0                    ///< 设备是否为中控类,0表示否,1表示是
+#define NINABLETIME  0                        ///< 绑定时间
 
 #ifndef SOFTWARE_VERSION
     #error "no define SOFTWARE_VERSION"

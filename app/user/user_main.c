@@ -43,6 +43,7 @@ unsigned int default_private_key_len = 0;
 #endif
 #endif
 
+
 /**@name Gizwits模块相关系统任务参数
 * @{
 */

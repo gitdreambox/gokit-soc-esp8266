@@ -159,6 +159,9 @@ typedef enum
     LED_COLOR_VALUE3 = 3,                           ///< 粉色
 } LED_COLOR_ENUM_T;
 
+
+
+
 /** 事件结构体*/
 typedef enum
 {
