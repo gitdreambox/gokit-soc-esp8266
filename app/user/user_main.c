@@ -43,7 +43,6 @@ unsigned int default_private_key_len = 0;
 #endif
 #endif
 
-
 /**@name Gizwits模块相关系统任务参数
 * @{
 */
@@ -231,6 +230,7 @@ void ICACHE_FLASH_ATTR gizwitsUserTask(os_event_t * events)
 void ICACHE_FLASH_ATTR user_init(void)
 {
     uint32 system_free_size = 0;
+	struct devAttrs attrs;
 
     wifi_station_set_auto_connect(1);
     wifi_set_sleep_type(NONE_SLEEP_T);//set none sleep mode

@@ -41,7 +41,6 @@ LOCAL os_timer_t gizTimer;
 
 /**
 * @brief 读取系统时间毫秒计时数
-
 * @param none
 * @return 系统时间毫秒数
 */
@@ -118,6 +117,8 @@ static uint16_t ICACHE_FLASH_ATTR gizProtocolExchangeBytes(uint16_t value)
     return tmp_value;
 }
 
+
+
 /**
 * @brief 32位数据字节序转换
 *
@@ -185,6 +186,7 @@ static uint32_t ICACHE_FLASH_ATTR gizY2X(uint32_t ratio, int32_t addition, int32
 
     return aftValue;
 }
+
 
 /**
 * @brief 转化为协议中的y值及App UI界面的显示值
@@ -597,8 +599,6 @@ static int8_t ICACHE_FLASH_ATTR gizDataPoint2Event(gizwitsIssued_t *issuedData, 
         dataPoints->valueLED_OnOff = gizDecompressionValue(LED_ONOFF_BYTEOFFSET,LED_ONOFF_BITOFFSET,LED_ONOFF_LEN,(uint8_t *)&issuedData->attrVals.wBitBuf,sizeof(issuedData->attrVals.wBitBuf));
     }
 
-
-
     if(0x01 == issuedData->attrFlags.flagLED_Color)
     {
         info->event[info->num] = EVENT_LED_COLOR;
@@ -632,17 +632,6 @@ static int8_t ICACHE_FLASH_ATTR gizDataPoint2Event(gizwitsIssued_t *issuedData, 
         info->num++;
         dataPoints->valueLED_B = gizX2Y(LED_B_RATIO,  LED_B_ADDITION, issuedData->attrVals.valueLED_B); 
     }
-
-
-
-    if(0x01 == issuedData->attrFlags.flagMotor_Speed)
-    {
-        info->event[info->num] = EVENT_MOTOR_SPEED;
-        info->num++;
-        dataPoints->valueMotor_Speed = gizX2Y(MOTOR_SPEED_RATIO,  MOTOR_SPEED_ADDITION, gizProtocolExchangeBytes(issuedData->attrVals.valueMotor_Speed));
-    }
-
-
 
     return 0;
 }

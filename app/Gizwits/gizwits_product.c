@@ -115,7 +115,6 @@ int8_t ICACHE_FLASH_ATTR gizwitsEventProcess(eventInfo_t *info, uint8_t *data, u
         motorControl(currentDataPoint.valueMotor_Speed);
         break;
 
-
       case WIFI_SOFTAP:
         break;
       case WIFI_AIRLINK:
