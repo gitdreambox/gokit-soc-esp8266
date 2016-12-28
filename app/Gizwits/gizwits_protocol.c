@@ -441,28 +441,27 @@ void ICACHE_FLASH_ATTR gizWiFiStatus(uint16_t value)
                 gizwitsProtocol.issuedProcessEvent.num++;
                 os_printf("OnBoarding: SoftAP or Web mode\r\n");
             }
-
-                if(1 == status.types.station)
-                {
-                    gizwitsProtocol.issuedProcessEvent.event[gizwitsProtocol.issuedProcessEvent.num] = WIFI_AIRLINK;
-                    gizwitsProtocol.issuedProcessEvent.num++;
-                    os_printf("OnBoarding: AirLink mode\r\n");
-                }
-            }
             else
             {
-                if(1 == status.types.softap)
-                {
-                    gizwitsProtocol.issuedProcessEvent.event[gizwitsProtocol.issuedProcessEvent.num] = WIFI_SOFTAP;
-                    gizwitsProtocol.issuedProcessEvent.num++;
-                    os_printf("OnBoarding: SoftAP or Web mode\r\n");
-                }
+                gizwitsProtocol.issuedProcessEvent.event[gizwitsProtocol.issuedProcessEvent.num] = WIFI_AIRLINK;
+                gizwitsProtocol.issuedProcessEvent.num++;
+                os_printf("OnBoarding: AirLink mode\r\n");
+            }
+        }
+        else
+        {
+            if(1 == status.types.softap)
+            {
+                gizwitsProtocol.issuedProcessEvent.event[gizwitsProtocol.issuedProcessEvent.num] = WIFI_SOFTAP;
+                gizwitsProtocol.issuedProcessEvent.num++;
+                os_printf("OnBoarding: SoftAP or Web mode\r\n");
+            }
 
-                if(1 == status.types.station)
-                {
-                    gizwitsProtocol.issuedProcessEvent.event[gizwitsProtocol.issuedProcessEvent.num] = WIFI_STATION;
-                    gizwitsProtocol.issuedProcessEvent.num++;
-                    os_printf("OnBoarding: Station mode\r\n");
+            if(1 == status.types.station)
+            {
+                gizwitsProtocol.issuedProcessEvent.event[gizwitsProtocol.issuedProcessEvent.num] = WIFI_STATION;
+                gizwitsProtocol.issuedProcessEvent.num++;
+                os_printf("OnBoarding: Station mode\r\n");
             }
         }
 
