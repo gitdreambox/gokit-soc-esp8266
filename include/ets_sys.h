@@ -11,8 +11,8 @@
 #include "c_types.h"
 #include "eagle_soc.h"
 
-typedef unsigned long ETSSignal;
-typedef unsigned long ETSParam;
+typedef uint32_t ETSSignal;
+typedef uint32_t ETSParam;
 
 typedef struct ETSEventTag ETSEvent;
 
@@ -24,13 +24,13 @@ struct ETSEventTag {
 typedef void (*ETSTask)(ETSEvent *e);
 
 /* timer related */
-typedef unsigned long ETSHandle;
+typedef uint32_t ETSHandle;
 typedef void ETSTimerFunc(void *timer_arg);
 
 typedef struct _ETSTIMER_ {
     struct _ETSTIMER_    *timer_next;
-    unsigned long              timer_expire;
-    unsigned long              timer_period;
+    uint32_t              timer_expire;
+    uint32_t              timer_period;
     ETSTimerFunc         *timer_func;
     void                 *timer_arg;
 } ETSTimer;
@@ -90,7 +90,7 @@ typedef struct _ETSTIMER_ {
 
 #define ETS_GPIO_INTR_DISABLE() \
     ETS_INTR_DISABLE(ETS_GPIO_INUM)
-
+    
 #define ETS_SPI_INTR_ENABLE() \
     ETS_INTR_ENABLE(ETS_SPI_INUM)
 

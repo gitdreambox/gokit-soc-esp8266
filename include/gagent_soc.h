@@ -10,6 +10,8 @@
 #define MCU_SOFTVER_LEN 8
 #define MCU_MCUATTR_LEN 8
 #define PK_LEN       32
+#define PK_SECRET_LEN    32
+
 #endif
 #define SDK_USER_VER_LEN        2
 
@@ -21,6 +23,7 @@ struct devAttrs
     unsigned char mstrDevHV[MCU_HARDVER_LEN];
     unsigned char mstrDevSV[MCU_SOFTVER_LEN];
     unsigned char mstrProductKey[PK_LEN];
+	unsigned char mstrPKSecret[PK_SECRET_LEN];
     unsigned char mDevAttr[MCU_MCUATTR_LEN];
     unsigned char mstrSdkVerLow[SDK_USER_VER_LEN];
 };

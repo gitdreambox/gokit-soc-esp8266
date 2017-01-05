@@ -39,6 +39,9 @@
 #define PRODUCT_KEY                   "your-product-key"
 /**@} */
 
+
+#define PRODUCT_KEY_SECRET 			  "2bc266b3d40c4229ac48117bc786c242"
+
 #define BUFFER_LEN_MAX                900
 #define REPORT_TIME_MAX               6000          ///< 6s
 

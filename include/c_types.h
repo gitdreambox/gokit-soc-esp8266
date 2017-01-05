@@ -12,9 +12,9 @@ typedef signed char         int8_t;
 typedef unsigned short      uint16_t;
 typedef signed short        sint16_t;
 typedef signed short        int16_t;
-//typedef unsigned long       uint32_t;
+typedef unsigned int        uint32_t;
 typedef signed long         sint32_t;
-//typedef signed long         int32_t;
+typedef signed int          int32_t;
 typedef signed long long    sint64_t;
 typedef unsigned long long  uint64_t;
 typedef unsigned long long  u_int64_t;
@@ -65,8 +65,8 @@ typedef enum {
 
 #define BIT(nr)                 (1UL << (nr))
 
-#define REG_SET_BIT(_r, _b)  (*(volatile unsigned long*)(_r) |= (_b))
-#define REG_CLR_BIT(_r, _b)  (*(volatile unsigned long*)(_r) &= ~(_b))
+#define REG_SET_BIT(_r, _b)  (*(volatile uint32_t*)(_r) |= (_b))
+#define REG_CLR_BIT(_r, _b)  (*(volatile uint32_t*)(_r) &= ~(_b))
 
 #define DMEM_ATTR __attribute__((section(".bss")))
 #define SHMEM_ATTR

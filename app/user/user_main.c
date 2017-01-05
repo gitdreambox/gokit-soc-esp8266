@@ -220,6 +220,14 @@ void ICACHE_FLASH_ATTR gizwitsUserTask(os_event_t * events)
     }
 }
 
+
+uint32 user_rf_cal_sector_set()
+{
+    //用flash中的636扇区(2544k~2548k)存储RF_CAL参数
+    return 636;
+}
+
+
 /**
 * @brief 程序入口函数
 

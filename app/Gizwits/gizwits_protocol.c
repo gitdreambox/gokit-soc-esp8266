@@ -959,6 +959,7 @@ void ICACHE_FLASH_ATTR gizwitsInit(void)
     os_memcpy(attrs.mstrDevSV, SOFTWARE_VERSION, os_strlen(SOFTWARE_VERSION));
     os_memcpy(attrs.mstrP0Ver, P0_VERSION, os_strlen(P0_VERSION));
     os_memcpy(attrs.mstrProductKey, PRODUCT_KEY, os_strlen(PRODUCT_KEY));
+	os_memcpy(attrs.mstrPKSecret, PRODUCT_KEY_SECRET, os_strlen(PRODUCT_KEY_SECRET));
     os_memcpy(attrs.mstrProtocolVer, PROTOCOL_VERSION, os_strlen(PROTOCOL_VERSION));
     os_memcpy(attrs.mstrSdkVerLow, SDK_VERSION, os_strlen(SDK_VERSION));
     gagentInit(attrs);

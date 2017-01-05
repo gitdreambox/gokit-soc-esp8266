@@ -46,8 +46,8 @@
 #define ETS_CACHED_ADDR(addr) (addr)
 
 
-#define READ_PERI_REG(addr) (*((volatile unsigned long *)ETS_UNCACHED_ADDR(addr)))
-#define WRITE_PERI_REG(addr, val) (*((volatile unsigned long *)ETS_UNCACHED_ADDR(addr))) = (unsigned long)(val)
+#define READ_PERI_REG(addr) (*((volatile uint32_t *)ETS_UNCACHED_ADDR(addr)))
+#define WRITE_PERI_REG(addr, val) (*((volatile uint32_t *)ETS_UNCACHED_ADDR(addr))) = (uint32_t)(val)
 #define CLEAR_PERI_REG_MASK(reg, mask) WRITE_PERI_REG((reg), (READ_PERI_REG(reg)&(~(mask))))
 #define SET_PERI_REG_MASK(reg, mask)   WRITE_PERI_REG((reg), (READ_PERI_REG(reg)|(mask)))
 #define GET_PERI_REG_BITS(reg, hipos,lowpos)      ((READ_PERI_REG(reg)>>(lowpos))&((1<<((hipos)-(lowpos)+1))-1))
@@ -171,6 +171,11 @@
 
 //RTC reg {{
 #define REG_RTC_BASE  PERIPHS_RTC_BASEADDR
+
+#define RTC_STORE0                              (REG_RTC_BASE + 0x030)
+#define RTC_STORE1                              (REG_RTC_BASE + 0x034)
+#define RTC_STORE2                              (REG_RTC_BASE + 0x038)
+#define RTC_STORE3                              (REG_RTC_BASE + 0x03C)
 
 #define RTC_GPIO_OUT                            (REG_RTC_BASE + 0x068)
 #define RTC_GPIO_ENABLE                         (REG_RTC_BASE + 0x074)
